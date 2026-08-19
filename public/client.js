@@ -9,6 +9,17 @@ const fileQueue = document.getElementById('fileQueue');
 const emojiBtn = document.getElementById('emojiBtn');
 const emojiPicker = document.getElementById('emojiPicker');
 
+
+const liveUsersEl = document.getElementById('liveUsers');
+const totalUsersEl = document.getElementById('totalUsers');
+
+// Receive live user count from server
+socket.on('userStats', (stats) => {
+  liveUsersEl.textContent = stats.live;
+  totalUsersEl.textContent = stats.total;
+});
+
+
 // Generate a cute anon handle if no name
 const anonTag = 'Anon#' + Math.random().toString(36).slice(2, 6);
 nameInput.placeholder = `Name (optional, e.g., ${anonTag})`;
