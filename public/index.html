@@ -9,12 +9,20 @@
 </head>
 <body>
   <div class="app">
-    <header>
-      <div class="title">💬 Anon Fun Chat</div>
-      <div class="meta">
-        <span class="live-dot"></span> Live — Nothing is saved
-      </div>
-    </header>
+<header>
+  <div class="title">💬 Anon Fun Chat</div>
+
+  <div class="header-right">
+    <div class="meta">
+      <span class="live-dot"></span> Live — Nothing is saved
+    </div>
+
+    <div class="user-stats">
+      <span>🟢 <strong id="liveUsers">0</strong> Live</span>
+      <span>👥 <strong id="totalUsers">0</strong> Total</span>
+    </div>
+  </div>
+</header>
 
     <main id="chatArea" aria-live="polite" aria-label="Group chat messages"></main>
 
