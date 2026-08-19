@@ -18,7 +18,7 @@ app.use(express.static('public'));
 
 // --- In-memory, ephemeral file store ---
 const storage = new Map(); // id -> {buffer, mime, filename, size, expiresAt}
-const TTL_MINUTES = parseInt(process.env.FILE_TTL_MINUTES || "60", 10); // default 60 minutes
+const TTL_MINUTES = parseInt(process.env.FILE_TTL_MINUTES || "10", 10); // default 60 minutes
 
 // Clean-up loop every 1 min
 setInterval(() => {
