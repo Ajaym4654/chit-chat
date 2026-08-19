@@ -104,3 +104,23 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
   console.log(`Anon Fun Chat running on http://localhost:${PORT}`);
 });
+
+
+let totalUsers = 0;
+
+io.on('connection', (socket) => {
+  totalUsers++;
+
+  function sendUserStats() {
+    io.emit('userStats', {
+      live: io.engine.clientsCount,
+      total: totalUsers
+    });
+  }
+
+  sendUserStats();
+
+  socket.on('disconnect', () => {
+    sendUserStats();
+  });
+});
