@@ -19,6 +19,61 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static('public'));
 
+const GIPHY_API_KEY = process.env.GIPHY_API_KEY;
+
+app.get('/api/gifs/search', async (req, res) => {
+  try {
+    if (!GIPHY_API_KEY) {
+      return res.status(500).json({
+        error: 'GIPHY_API_KEY is not configured on server'
+      });
+    }
+
+    const query = String(req.query.q || 'funny').trim();
+
+    const limit = 20;
+
+    const url =
+      `https://api.giphy.com/v1/gifs/search` +
+      `?api_key=${encodeURIComponent(GIPHY_API_KEY)}` +
+      `&q=${encodeURIComponent(query)}` +
+      `&limit=${limit}` +
+      `&rating=pg-13` +
+      `&lang=en`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('GIPHY API error:', errorText);
+
+      return res.status(502).json({
+        error: 'GIPHY request failed'
+      });
+    }
+
+    const data = await response.json();
+
+    const gifs = (data.data || []).map(gif => ({
+      id: gif.id,
+      title: gif.title,
+      url: gif.images?.original?.url,
+      preview:
+        gif.images?.fixed_width?.url ||
+        gif.images?.downsized?.url ||
+        gif.images?.original?.url
+    })).filter(gif => gif.url);
+
+    res.json({ gifs });
+
+  } catch (error) {
+    console.error('GIF search error:', error);
+
+    res.status(500).json({
+      error: 'Unable to search GIFs'
+    });
+  }
+});
 
 // =====================================================
 // GIPHY API PROXY
