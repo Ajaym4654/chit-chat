@@ -1,65 +1,278 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <meta
+    name="theme-color"
+    content="#f8fafc"
+  >
+
   <title>Anon Fun Chat</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
+  <link
+    rel="icon"
+    href="data:;base64,iVBORw0KGgo="
+  >
 </head>
+
 <body>
-  <div class="background-shapes">
-  <span class="circle circle-1"></span>
-  <span class="circle circle-2"></span>
-  <span class="circle circle-3"></span>
-  <span class="circle circle-4"></span>
-  <span class="circle circle-5"></span>
-  <span class="circle circle-6"></span>
-</div>
 
-<div class="app">
-<header>
-  <div class="title">💬 Anon Fun Chat</div>
+  <!-- ==========================================
+       BACKGROUND
+  =========================================== -->
 
-  <div class="header-right">
-    <div class="meta">
-      <span class="live-dot"></span> Live — Nothing is saved
-    </div>
-
-    <div class="user-stats">
-      <span>🟢 <strong id="liveUsers">0</strong> Live</span>
-      <span>👥 <strong id="totalUsers">0</strong> Total</span>
-    </div>
+  <div
+    class="background-shapes"
+    aria-hidden="true"
+  >
+    <span class="circle circle-1"></span>
+    <span class="circle circle-2"></span>
+    <span class="circle circle-3"></span>
+    <span class="circle circle-4"></span>
+    <span class="circle circle-5"></span>
+    <span class="circle circle-6"></span>
   </div>
-</header>
 
-    <main id="chatArea" aria-live="polite" aria-label="Group chat messages"></main>
 
-    <form id="controls" autocomplete="off">
-      <div class="row">
-        <input id="name" type="text" placeholder="Name (optional)" maxlength="20" />
-        <div class="emoji-picker" id="emojiPicker" aria-hidden="true"></div>
+  <!-- ==========================================
+       APP
+  =========================================== -->
+
+  <div class="app">
+
+
+    <!-- HEADER -->
+
+    <header>
+
+      <div class="title">
+        💬 Anon Fun Chat
       </div>
 
-      <div class="row">
-        <textarea id="msg" rows="1" placeholder="Type a message… (press Enter to send)" maxlength="2000"></textarea>
-        <button type="button" id="emojiBtn" title="Emoji">😊</button>
-        <label class="fileLabel" title="Send a file">
+      <div class="header-right">
+
+        <div class="meta">
+          <span class="live-dot"></span>
+          <span>Live — Nothing is saved</span>
+        </div>
+
+        <div
+          class="user-stats"
+          aria-label="User statistics"
+        >
+
+          <span>
+            🟢
+            <strong id="liveUsers">0</strong>
+            Live
+          </span>
+
+          <span>
+            👥
+            <strong id="totalUsers">0</strong>
+            Total
+          </span>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- CHAT -->
+
+    <main
+      id="chatArea"
+      aria-live="polite"
+      aria-label="Group chat messages"
+    ></main>
+
+
+    <!-- CONTROLS -->
+
+    <form
+      id="controls"
+      autocomplete="off"
+    >
+
+      <!-- NAME -->
+
+      <div class="row name-row">
+
+        <input
+          id="name"
+          type="text"
+          placeholder="Name (optional)"
+          maxlength="20"
+          autocomplete="off"
+        >
+
+
+        <!-- EMOJI PICKER -->
+
+        <div
+          class="emoji-picker"
+          id="emojiPicker"
+          aria-hidden="true"
+        ></div>
+
+
+        <!-- GIF PICKER -->
+
+        <div
+          class="gif-picker"
+          id="gifPicker"
+        >
+
+          <div class="gif-search">
+
+            <input
+              id="gifSearch"
+              type="text"
+              placeholder="Search GIFs..."
+              autocomplete="off"
+            >
+
+          </div>
+
+          <div
+            id="gifResults"
+            class="gif-results"
+          ></div>
+
+        </div>
+
+      </div>
+
+
+      <!-- MESSAGE -->
+
+      <div class="row message-row">
+
+        <textarea
+          id="msg"
+          rows="1"
+          placeholder="Type a message… (press Enter to send)"
+          maxlength="2000"
+          autocomplete="off"
+        ></textarea>
+
+
+        <!-- EMOJI -->
+
+        <button
+          type="button"
+          id="emojiBtn"
+          title="Emoji"
+          aria-label="Emoji"
+        >
+          😊
+        </button>
+
+
+        <!-- GIF -->
+
+        <button
+          type="button"
+          id="gifBtn"
+          title="GIF"
+          aria-label="GIF"
+        >
+          GIF
+        </button>
+
+
+        <!-- VOICE -->
+
+        <button
+          type="button"
+          id="voiceBtn"
+          title="Voice message"
+          aria-label="Voice message"
+        >
+          🎤
+        </button>
+
+
+        <!-- FILE -->
+
+        <label
+          class="fileLabel"
+          title="Send a file"
+          aria-label="Attach file"
+        >
+
           📎
-          <input id="fileInput" type="file" hidden />
+
+          <input
+            id="fileInput"
+            type="file"
+            accept="image/*,audio/*,.pdf,.doc,.docx,.txt"
+            hidden
+          >
+
         </label>
-        <button id="sendBtn" class="send" type="submit">Send</button>
+
+
+        <!-- SEND -->
+
+        <button
+          id="sendBtn"
+          class="send"
+          type="submit"
+        >
+          Send
+        </button>
+
       </div>
 
-      <div id="fileQueue" class="file-queue" aria-live="polite"></div>
+
+      <!-- FILE QUEUE -->
+
+      <div
+        id="fileQueue"
+        class="file-queue"
+        aria-live="polite"
+      ></div>
+
     </form>
 
+
+    <!-- FOOTER -->
+
     <footer>
-      <small>For fun only · No accounts · No history · Files auto-expire · Be nice ✨</small>
+
+      <small>
+        For fun only · No accounts · No history ·
+        Files auto-expire · Be nice ✨
+      </small>
+
     </footer>
+
   </div>
 
+
+  <!-- SOCKET.IO -->
+
   <script src="/socket.io/socket.io.js"></script>
+
+  <!-- CLIENT -->
+
   <script src="client.js"></script>
+
 </body>
+
 </html>
