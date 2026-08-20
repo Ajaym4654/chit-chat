@@ -1,6 +1,6 @@
-// Anonymous Fun Chat - server.js
-// Live group chat, no auth, no message persistence, ephemeral files.
-// Includes: file sharing, voice messages, GIF search, live user stats.
+// =====================================================
+// ANONYMOUS FUN CHAT - SERVER.JS
+// =====================================================
 
 const express = require('express');
 const http = require('http');
@@ -13,18 +13,113 @@ const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 
-
 // =====================================================
-// SERVE WEBSITE
+// SERVE FRONTEND
 // =====================================================
 
 app.use(express.static('public'));
 
 
 // =====================================================
-// EPHEMERAL FILE STORAGE
-// Files are stored in RAM and automatically deleted
-// after TTL_MINUTES.
+// GIPHY API PROXY
+// API KEY STAYS ON SERVER
+// =====================================================
+
+app.get('/api/gifs', async (req, res) => {
+
+  try {
+
+    const apiKey = process.env.GIPHY_API_KEY;
+
+    if (!apiKey) {
+
+      return res.status(500).json({
+        error: 'GIPHY API key is not configured on server.'
+      });
+
+    }
+
+    const query =
+      (req.query.q || 'funny')
+        .toString()
+        .slice(0, 100);
+
+    const limit = Math.min(
+      Math.max(
+        parseInt(req.query.limit || '24', 10),
+        1
+      ),
+      50
+    );
+
+    const url =
+      'https://api.giphy.com/v1/gifs/search' +
+      '?api_key=' + encodeURIComponent(apiKey) +
+      '&q=' + encodeURIComponent(query) +
+      '&limit=' + limit +
+      '&rating=pg-13';
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+
+      console.error(
+        'GIPHY API error:',
+        response.status
+      );
+
+      return res.status(response.status).json({
+        error: 'GIPHY request failed.'
+      });
+
+    }
+
+    const data = await response.json();
+
+    const gifs =
+      (data.data || [])
+        .map(gif => ({
+
+          id: gif.id,
+
+          title:
+            gif.title || '',
+
+          url:
+            gif.images?.original?.url || '',
+
+          preview:
+            gif.images?.fixed_width_small?.url ||
+            gif.images?.preview_gif?.url ||
+            gif.images?.original?.url ||
+            ''
+
+        }))
+        .filter(gif => gif.url);
+
+    res.json({
+      gifs
+    });
+
+  } catch (error) {
+
+    console.error(
+      'GIPHY error:',
+      error
+    );
+
+    res.status(500).json({
+      error: 'Unable to load GIFs.'
+    });
+
+  }
+
+});
+
+
+// =====================================================
+// FILE STORAGE
+// EPHEMERAL - RAM ONLY
 // =====================================================
 
 const storage = new Map();
@@ -37,7 +132,7 @@ const TTL_MINUTES = parseInt(
 
 // =====================================================
 // DELETE EXPIRED FILES
-// Runs every 1 minute
+// EVERY 1 MINUTE
 // =====================================================
 
 setInterval(() => {
@@ -47,7 +142,9 @@ setInterval(() => {
   for (const [id, file] of storage.entries()) {
 
     if (file.expiresAt <= now) {
+
       storage.delete(id);
+
     }
 
   }
@@ -57,7 +154,7 @@ setInterval(() => {
 
 // =====================================================
 // MULTER
-// Maximum file size: 50 MB
+// MAX FILE SIZE = 50MB
 // =====================================================
 
 const upload = multer({
@@ -73,7 +170,6 @@ const upload = multer({
 
 // =====================================================
 // FILE UPLOAD
-// Images / Audio / Documents
 // =====================================================
 
 app.post(
@@ -92,16 +188,13 @@ app.post(
       }
 
 
-      // Generate unique ID
-
       const id =
         Math.random()
           .toString(36)
           .slice(2) +
-        Date.now().toString(36);
+        Date.now()
+          .toString(36);
 
-
-      // Clean filename
 
       const safeName =
         (
@@ -117,8 +210,6 @@ app.post(
 
       const filename = safeName;
 
-
-      // Save temporarily in memory
 
       storage.set(id, {
 
@@ -146,8 +237,6 @@ app.post(
 
 
       res.json({
-
-        success: true,
 
         id,
 
@@ -232,189 +321,7 @@ app.get(
 
 
 // =====================================================
-// GIPHY GIF SEARCH
-// API KEY IS STORED IN RENDER ENVIRONMENT VARIABLE
-//
-// Render:
-// GIPHY_API_KEY = your_api_key
-// =====================================================
-
-app.get(
-  '/api/gifs',
-  async (req, res) => {
-
-    try {
-
-      const apiKey =
-        process.env.GIPHY_API_KEY;
-
-
-      // Check API key
-
-      if (!apiKey) {
-
-        return res.status(500).json({
-
-          error:
-            'GIPHY API key is not configured on the server.'
-
-        });
-
-      }
-
-
-      // Search query
-
-      const query =
-        (
-          req.query.q ||
-          'funny'
-        )
-        .toString()
-        .trim()
-        .slice(0, 100);
-
-
-      // Limit
-
-      let limit =
-        parseInt(
-          req.query.limit || '20',
-          10
-        );
-
-
-      if (
-        Number.isNaN(limit) ||
-        limit < 1
-      ) {
-        limit = 20;
-      }
-
-
-      if (limit > 30) {
-        limit = 30;
-      }
-
-
-      // GIPHY URL
-
-      const giphyUrl =
-        'https://api.giphy.com/v1/gifs/search' +
-        '?api_key=' +
-        encodeURIComponent(apiKey) +
-        '&q=' +
-        encodeURIComponent(
-          query || 'funny'
-        ) +
-        '&limit=' +
-        limit +
-        '&rating=pg-13' +
-        '&lang=en';
-
-
-      // Request GIPHY
-
-      const response =
-        await fetch(giphyUrl);
-
-
-      if (!response.ok) {
-
-        console.error(
-          'GIPHY response:',
-          response.status
-        );
-
-
-        return res.status(
-          response.status
-        ).json({
-
-          error:
-            'GIPHY request failed.'
-
-        });
-
-      }
-
-
-      const data =
-        await response.json();
-
-
-      // Format GIF results
-
-      const gifs =
-        (data.data || [])
-        .map(
-          (gif) => {
-
-            const images =
-              gif.images || {};
-
-
-            return {
-
-              id:
-                gif.id,
-
-              title:
-                gif.title || 'GIF',
-
-              url:
-                images.fixed_height?.url ||
-                images.original?.url ||
-                '',
-
-              preview:
-                images.fixed_height_small?.url ||
-                images.fixed_width_small?.url ||
-                images.fixed_height?.url ||
-                images.original?.url ||
-                ''
-
-            };
-
-          }
-        )
-        .filter(
-          gif =>
-            gif.url
-        );
-
-
-      res.json({
-
-        success: true,
-
-        gifs
-
-      });
-
-    } catch (error) {
-
-      console.error(
-        'GIPHY error:',
-        error
-      );
-
-
-      res.status(500).json({
-
-        error:
-          'Unable to load GIFs.'
-
-      });
-
-    }
-
-  }
-);
-
-
-// =====================================================
-// LIVE USER COUNT
+// TOTAL USERS
 // =====================================================
 
 let totalUsers = 0;
@@ -428,15 +335,11 @@ io.on(
   'connection',
   (socket) => {
 
-    // -------------------------------------------------
-    // NEW USER CONNECTED
-    // -------------------------------------------------
-
     totalUsers++;
 
 
     // -------------------------------------------------
-    // SEND USER STATISTICS
+    // USER STATS
     // -------------------------------------------------
 
     function sendUserStats() {
@@ -461,7 +364,7 @@ io.on(
 
 
     // -------------------------------------------------
-    // USER JOINED
+    // HELLO / JOIN
     // -------------------------------------------------
 
     socket.on(
@@ -471,7 +374,6 @@ io.on(
         const name =
           typeof payload?.name === 'string'
             ? payload.name
-                .trim()
                 .slice(0, 20)
             : null;
 
@@ -510,8 +412,6 @@ io.on(
             : '';
 
 
-        // Maximum 2000 characters
-
         if (
           text.length > 2000
         ) {
@@ -528,12 +428,9 @@ io.on(
         const name =
           typeof msg?.name === 'string'
             ? msg.name
-                .trim()
                 .slice(0, 20)
             : null;
 
-
-        // Ignore completely empty message
 
         if (!text.trim()) {
           return;
@@ -544,16 +441,11 @@ io.on(
           'chat',
           {
 
-            text:
+            text,
 
-              text,
-
-            name:
-
-              name || null,
+            name,
 
             at:
-
               Date.now()
 
           }
@@ -565,7 +457,6 @@ io.on(
 
     // -------------------------------------------------
     // FILE SHARED
-    // Images / Audio / Documents
     // -------------------------------------------------
 
     socket.on(
@@ -574,7 +465,7 @@ io.on(
 
         if (
           !fileInfo ||
-          typeof fileInfo.link !== 'string'
+          !fileInfo.link
         ) {
 
           return;
@@ -590,23 +481,24 @@ io.on(
               fileInfo.link,
 
             filename:
-              fileInfo.filename || 'file',
+              fileInfo.filename ||
+              'file',
 
             size:
               Number(fileInfo.size) || 0,
 
             mime:
-              fileInfo.mime || 'application/octet-stream',
+              fileInfo.mime ||
+              'application/octet-stream',
 
             ttlMinutes:
-              Number(fileInfo.ttlMinutes) ||
-              TTL_MINUTES,
+              Number(
+                fileInfo.ttlMinutes
+              ) || TTL_MINUTES,
 
             name:
               typeof fileInfo.name === 'string'
-                ? fileInfo.name
-                    .trim()
-                    .slice(0, 20)
+                ? fileInfo.name.slice(0, 20)
                 : null,
 
             at:
@@ -629,75 +521,33 @@ io.on(
 
         if (
           !gifInfo ||
-          typeof gifInfo.url !== 'string'
+          !gifInfo.url
         ) {
 
           return;
 
         }
-
-
-        // Basic URL validation
-
-        let gifUrl;
-
-        try {
-
-          gifUrl =
-            new URL(
-              gifInfo.url
-            );
-
-        } catch {
-
-          return;
-
-        }
-
-
-        // Only allow HTTP/HTTPS
-
-        if (
-          gifUrl.protocol !== 'https:' &&
-          gifUrl.protocol !== 'http:'
-        ) {
-
-          return;
-
-        }
-
-
-        const name =
-          typeof gifInfo.name === 'string'
-            ? gifInfo.name
-                .trim()
-                .slice(0, 20)
-            : null;
 
 
         io.emit(
           'gifShared',
           {
 
-            id:
-              gifInfo.id || null,
-
             url:
               gifInfo.url,
 
             preview:
-              typeof gifInfo.preview === 'string'
-                ? gifInfo.preview
-                : gifInfo.url,
+              gifInfo.preview ||
+              gifInfo.url,
 
             title:
-              typeof gifInfo.title === 'string'
-                ? gifInfo.title
-                    .slice(0, 200)
-                : 'GIF',
+              gifInfo.title ||
+              'GIF',
 
             name:
-              name || null,
+              typeof gifInfo.name === 'string'
+                ? gifInfo.name.slice(0, 20)
+                : null,
 
             at:
               Date.now()
