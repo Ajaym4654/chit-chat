@@ -2,16 +2,11 @@
 // ANON FUN CHAT - CLIENT.JS
 // =====================================================
 
-
-// =====================================================
-// SOCKET
-// =====================================================
-
 const socket = io();
 
 
 // =====================================================
-// DOM ELEMENTS
+// ELEMENTS
 // =====================================================
 
 const chatArea =
@@ -38,11 +33,17 @@ const emojiBtn =
 const emojiPicker =
   document.getElementById('emojiPicker');
 
+const liveUsersEl =
+  document.getElementById('liveUsers');
+
+const totalUsersEl =
+  document.getElementById('totalUsers');
+
 const gifBtn =
   document.getElementById('gifBtn');
 
-const gifPicker =
-  document.getElementById('gifPicker');
+const gifPanel =
+  document.getElementById('gifPanel');
 
 const gifSearch =
   document.getElementById('gifSearch');
@@ -53,23 +54,16 @@ const gifResults =
 const voiceBtn =
   document.getElementById('voiceBtn');
 
-const liveUsersEl =
-  document.getElementById('liveUsers');
-
-const totalUsersEl =
-  document.getElementById('totalUsers');
-
 
 // =====================================================
-// ANONYMOUS HANDLE
+// ANONYMOUS NAME
 // =====================================================
 
 const anonTag =
   'Anon#' +
   Math.random()
     .toString(36)
-    .slice(2, 6)
-    .toUpperCase();
+    .slice(2, 6);
 
 nameInput.placeholder =
   `Name (optional, e.g., ${anonTag})`;
@@ -79,19 +73,41 @@ nameInput.placeholder =
 // USER STATS
 // =====================================================
 
-socket.on('userStats', (stats) => {
+socket.on(
+  'userStats',
+  (stats) => {
 
-  if (liveUsersEl) {
-    liveUsersEl.textContent =
-      Number(stats.live || 0);
+    if (liveUsersEl) {
+
+      liveUsersEl.textContent =
+        stats.live;
+
+    }
+
+
+    if (totalUsersEl) {
+
+      totalUsersEl.textContent =
+        stats.total;
+
+    }
+
   }
+);
 
-  if (totalUsersEl) {
-    totalUsersEl.textContent =
-      Number(stats.total || 0);
+
+// =====================================================
+// JOIN
+// =====================================================
+
+socket.emit(
+  'hello',
+  {
+    name:
+      nameInput.value ||
+      null
   }
-
-});
+);
 
 
 // =====================================================
@@ -99,6 +115,7 @@ socket.on('userStats', (stats) => {
 // =====================================================
 
 let audioContext = null;
+
 
 function playNotificationSound() {
 
@@ -114,8 +131,10 @@ function playNotificationSound() {
 
     }
 
+
     if (
-      audioContext.state === 'suspended'
+      audioContext.state ===
+      'suspended'
     ) {
 
       audioContext.resume();
@@ -130,8 +149,8 @@ function playNotificationSound() {
       audioContext.createGain();
 
 
-    oscillator.type = 'sine';
-
+    oscillator.type =
+      'sine';
 
     oscillator.frequency.setValueAtTime(
       880,
@@ -159,7 +178,7 @@ function playNotificationSound() {
 
     gain.gain.exponentialRampToValueAtTime(
       0.0001,
-      audioContext.currentTime + 0.2
+      audioContext.currentTime + 0.16
     );
 
 
@@ -173,7 +192,7 @@ function playNotificationSound() {
     oscillator.start();
 
     oscillator.stop(
-      audioContext.currentTime + 0.2
+      audioContext.currentTime + 0.17
     );
 
   } catch (error) {
@@ -187,45 +206,36 @@ function playNotificationSound() {
 }
 
 
-// =====================================================
-// BROWSER NOTIFICATION
-// =====================================================
-
-async function requestNotificationPermission() {
-
-  if (
-    !('Notification' in window)
-  ) {
-    return;
-  }
-
-
-  if (
-    Notification.permission === 'default'
-  ) {
-
-    try {
-
-      await Notification.requestPermission();
-
-    } catch (error) {
-
-      console.log(
-        'Notification permission unavailable'
-      );
-
-    }
-
-  }
-
-}
-
-
-// Ask permission after user interaction
+// Unlock audio after user interaction
 
 document.addEventListener(
   'click',
-  requestNotificationPermission,
+  () => {
+
+    try {
+
+      if (!audioContext) {
+
+        audioContext =
+          new (
+            window.AudioContext ||
+            window.webkitAudioContext
+          )();
+
+      }
+
+      if (
+        audioContext.state ===
+        'suspended'
+      ) {
+
+        audioContext.resume();
+
+      }
+
+    } catch {}
+
+  },
   {
     once: true
   }
@@ -233,61 +243,90 @@ document.addEventListener(
 
 
 // =====================================================
-// NOTIFY
+// BROWSER NOTIFICATIONS
 // =====================================================
 
-function notifyUser(
-  title,
-  body
-) {
+async function requestNotifications() {
 
-  playNotificationSound();
+  if (
+    !('Notification' in window)
+  ) {
+
+    return;
+
+  }
 
 
   if (
-    document.hidden &&
-    'Notification' in window &&
-    Notification.permission === 'granted'
+    Notification.permission ===
+    'default'
   ) {
 
     try {
 
-      new Notification(
-        title,
-        {
-          body: body,
-          icon: '/icon.png'
-        }
-      );
+      await Notification.requestPermission();
 
-    } catch (error) {
-
-      console.log(
-        'Browser notification failed'
-      );
-
-    }
+    } catch {}
 
   }
 
 }
 
 
-// =====================================================
-// HELLO
-// =====================================================
+requestNotifications();
 
-socket.emit(
-  'hello',
-  {
-    name:
-      nameInput.value || null
+
+function showNotification(
+  title,
+  body
+) {
+
+  if (
+    !('Notification' in window)
+  ) {
+
+    return;
+
   }
-);
+
+
+  if (
+    Notification.permission !==
+    'granted'
+  ) {
+
+    return;
+
+  }
+
+
+  if (
+    document.visibilityState ===
+    'visible'
+  ) {
+
+    return;
+
+  }
+
+
+  try {
+
+    new Notification(
+      title,
+      {
+        body,
+        icon: '/favicon.ico'
+      }
+    );
+
+  } catch {}
+
+}
 
 
 // =====================================================
-// CHAT MESSAGE RECEIVED
+// CHAT MESSAGE
 // =====================================================
 
 socket.on(
@@ -301,29 +340,23 @@ socket.on(
     );
 
 
-    const myName =
-      nameInput.value.trim() ||
-      null;
+    playNotificationSound();
 
 
-    // Don't notify yourself
-    if (
-      data.name !== myName
-    ) {
-
-      notifyUser(
-        data.name || 'Anon',
-        data.text
-      );
-
-    }
+    showNotification(
+      '💬 Anon Fun Chat',
+      `${
+        data.name ||
+        'Anon'
+      }: ${data.text}`
+    );
 
   }
 );
 
 
 // =====================================================
-// SYSTEM EVENTS
+// SYSTEM JOIN / LEAVE
 // =====================================================
 
 socket.on(
@@ -331,13 +364,15 @@ socket.on(
   (evt) => {
 
     if (
-      evt.type === 'join'
+      evt.type ===
+      'join'
     ) {
 
       addSystem(
         `Someone joined${
           evt.name
-            ? ' as ' + evt.name
+            ? ' as ' +
+              safe(evt.name)
             : ''
         } ✨`
       );
@@ -346,7 +381,8 @@ socket.on(
 
 
     else if (
-      evt.type === 'leave'
+      evt.type ===
+      'leave'
     ) {
 
       addSystem(
@@ -360,41 +396,37 @@ socket.on(
 
 
 // =====================================================
-// FILE RECEIVED
+// FILE SHARED
 // =====================================================
 
 socket.on(
   'fileShared',
-  (file) => {
+  (f) => {
 
     addFileMessage(
-      file,
-      file.at
+      f,
+      f.at
     );
 
 
-    const myName =
-      nameInput.value.trim() ||
-      null;
+    playNotificationSound();
 
-
-    if (
-      file.name !== myName
-    ) {
-
-      notifyUser(
-        file.name || 'Anon',
-        `📎 ${file.filename}`
-      );
-
-    }
+    showNotification(
+      '📎 New file',
+      `${
+        f.name ||
+        'Anon'
+      } shared ${
+        f.filename
+      }`
+    );
 
   }
 );
 
 
 // =====================================================
-// GIF RECEIVED
+// GIF SHARED
 // =====================================================
 
 socket.on(
@@ -407,28 +439,22 @@ socket.on(
     );
 
 
-    const myName =
-      nameInput.value.trim() ||
-      null;
+    playNotificationSound();
 
-
-    if (
-      gif.name !== myName
-    ) {
-
-      notifyUser(
-        gif.name || 'Anon',
-        '😂 Sent a GIF'
-      );
-
-    }
+    showNotification(
+      '😂 New GIF',
+      `${
+        gif.name ||
+        'Anon'
+      } sent a GIF`
+    );
 
   }
 );
 
 
 // =====================================================
-// SEND MESSAGE / FILE
+// SEND MESSAGE
 // =====================================================
 
 document
@@ -444,15 +470,9 @@ document
         msgInput.value.trim();
 
 
-      const files =
-        Array.from(
-          fileInput.files
-        );
-
-
       if (
         !text &&
-        files.length === 0
+        fileInput.files.length === 0
       ) {
 
         return;
@@ -465,7 +485,7 @@ document
         null;
 
 
-      // Send text
+      // Text
 
       if (text) {
 
@@ -486,11 +506,18 @@ document
       }
 
 
-      // Upload files
+      // Files
 
       if (
-        files.length > 0
+        fileInput.files.length >
+        0
       ) {
+
+        const files =
+          Array.from(
+            fileInput.files
+          );
+
 
         uploadFiles(
           files,
@@ -498,7 +525,8 @@ document
         );
 
 
-        fileInput.value = '';
+        fileInput.value =
+          '';
 
         fileQueue.innerHTML =
           '';
@@ -510,7 +538,7 @@ document
 
 
 // =====================================================
-// AUTO GROW MESSAGE BOX
+// AUTO GROW TEXTAREA
 // =====================================================
 
 msgInput.addEventListener(
@@ -554,7 +582,7 @@ msgInput.addEventListener(
 
 
 // =====================================================
-// FILE QUEUE
+// FILE PREVIEW
 // =====================================================
 
 fileInput.addEventListener(
@@ -571,41 +599,47 @@ fileInput.addEventListener(
       );
 
 
-    files.forEach(
-      (file) => {
+    for (
+      const f of files
+    ) {
 
-        const chip =
-          document.createElement(
-            'span'
-          );
-
-        chip.className =
-          'file-chip';
+      const chip =
+        document.createElement(
+          'span'
+        );
 
 
-        chip.textContent =
-          `${file.name} (${fmtSize(file.size)})`;
+      chip.className =
+        'file-chip';
 
 
-        const x =
-          document.createElement(
-            'span'
-          );
-
-        x.textContent =
-          '✕';
-
-        x.className =
-          'x';
+      chip.textContent =
+        `${f.name} (${fmtSize(f.size)})`;
 
 
-        x.onclick = () => {
+      const x =
+        document.createElement(
+          'span'
+        );
 
-          const remaining =
+
+      x.textContent =
+        '✕';
+
+      x.className =
+        'x';
+
+
+      x.onclick =
+        () => {
+
+          const remain =
             Array.from(
               fileInput.files
-            ).filter(
-              f => f !== file
+            )
+            .filter(
+              ff =>
+                ff !== f
             );
 
 
@@ -613,8 +647,9 @@ fileInput.addEventListener(
             new DataTransfer();
 
 
-          remaining.forEach(
-            f => dt.items.add(f)
+          remain.forEach(
+            ff =>
+              dt.items.add(ff)
           );
 
 
@@ -627,14 +662,13 @@ fileInput.addEventListener(
         };
 
 
-        chip.appendChild(x);
+      chip.appendChild(x);
 
-        fileQueue.appendChild(
-          chip
-        );
+      fileQueue.appendChild(
+        chip
+      );
 
-      }
-    );
+    }
 
   }
 );
@@ -672,7 +706,7 @@ async function uploadFiles(
       );
 
 
-      const response =
+      const res =
         await fetch(
           '/upload',
           {
@@ -682,9 +716,7 @@ async function uploadFiles(
         );
 
 
-      if (
-        !response.ok
-      ) {
+      if (!res.ok) {
 
         addSystem(
           `Upload failed for ${file.name} ❌`
@@ -696,41 +728,42 @@ async function uploadFiles(
 
 
       const info =
-        await response.json();
+        await res.json();
+
+
+      const fileInfo = {
+
+        link:
+          info.link,
+
+        filename:
+          info.filename,
+
+        size:
+          info.size,
+
+        mime:
+          info.mime,
+
+        ttlMinutes:
+          info.ttlMinutes,
+
+        name:
+          name || null
+
+      };
 
 
       socket.emit(
         'fileShared',
-        {
-
-          link:
-            info.link,
-
-          filename:
-            info.filename,
-
-          size:
-            info.size,
-
-          mime:
-            info.mime,
-
-          ttlMinutes:
-            info.ttlMinutes,
-
-          name:
-            name || null
-
-        }
+        fileInfo
       );
-
 
     } catch (error) {
 
       console.error(
         error
       );
-
 
       addSystem(
         `Upload failed for ${file.name} ❌`
@@ -744,7 +777,23 @@ async function uploadFiles(
 
 
 // =====================================================
-// EMOJIS
+// IMAGE PREVIEW
+// =====================================================
+
+function isImage(
+  mime
+) {
+
+  return (
+    typeof mime === 'string' &&
+    mime.startsWith('image/')
+  );
+
+}
+
+
+// =====================================================
+// EMOJI
 // =====================================================
 
 const EMOJIS = [
@@ -770,7 +819,7 @@ function buildEmojiPicker() {
 
 
   EMOJIS.forEach(
-    (emoji) => {
+    emoji => {
 
       const button =
         document.createElement(
@@ -814,9 +863,10 @@ function buildEmojiPicker() {
           msgInput.focus();
 
 
-          emojiPicker.classList.remove(
-            'open'
-          );
+          emojiPicker.classList
+            .remove(
+              'open'
+            );
 
         }
       );
@@ -835,18 +885,11 @@ function buildEmojiPicker() {
 buildEmojiPicker();
 
 
-// Emoji button
-
 emojiBtn.addEventListener(
   'click',
   () => {
 
     emojiPicker.classList.toggle(
-      'open'
-    );
-
-
-    gifPicker.classList.remove(
       'open'
     );
 
@@ -858,132 +901,93 @@ emojiBtn.addEventListener(
 // GIF
 // =====================================================
 
-// IMPORTANT:
-// Replace this with your GIPHY API key.
+if (gifBtn) {
 
-const GIPHY_API_KEY =
-  'YOUR_GIPHY_API_KEY';
+  gifBtn.addEventListener(
+    'click',
+    () => {
 
-
-// Open GIF picker
-
-gifBtn.addEventListener(
-  'click',
-  () => {
-
-    gifPicker.classList.toggle(
-      'open'
-    );
-
-
-    emojiPicker.classList.remove(
-      'open'
-    );
-
-
-    if (
-      gifPicker.classList.contains(
+      gifPanel.classList.toggle(
         'open'
-      )
-    ) {
-
-      loadGifs(
-        'funny'
       );
 
-    }
 
-  }
-);
+      if (
+        gifPanel.classList.contains(
+          'open'
+        )
+      ) {
 
+        searchGifs(
+          'funny'
+        );
 
-// GIF search
-
-gifSearch.addEventListener(
-  'keydown',
-  (e) => {
-
-    if (
-      e.key === 'Enter'
-    ) {
-
-      e.preventDefault();
-
-
-      const query =
-        gifSearch.value.trim() ||
-        'funny';
-
-
-      loadGifs(
-        query
-      );
+      }
 
     }
+  );
 
-  }
-);
+}
 
 
-// Load GIFs
+if (gifSearch) {
 
-async function loadGifs(
-  query
+  gifSearch.addEventListener(
+    'keydown',
+    e => {
+
+      if (
+        e.key === 'Enter'
+      ) {
+
+        e.preventDefault();
+
+        searchGifs(
+          gifSearch.value.trim() ||
+          'funny'
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+async function searchGifs(
+  query = 'funny'
 ) {
 
-  if (
-    !GIPHY_API_KEY ||
-    GIPHY_API_KEY ===
-      'YOUR_GIPHY_API_KEY'
-  ) {
-
-    gifResults.innerHTML =
-
-      '<div class="gif-error">' +
-      'Add your GIPHY API key in client.js' +
-      '</div>';
-
+  if (!gifResults) {
     return;
-
   }
 
 
   gifResults.innerHTML =
-    '<div class="gif-loading">Loading GIFs...</div>';
+    '<div class="gif-loading">Loading GIFs... 🎬</div>';
 
 
   try {
 
-    const url =
-      'https://api.giphy.com/v1/gifs/search' +
-      `?api_key=${encodeURIComponent(
-        GIPHY_API_KEY
-      )}` +
-      `&q=${encodeURIComponent(
-        query
-      )}` +
-      '&limit=24' +
-      '&rating=pg-13';
-
-
     const response =
       await fetch(
-        url
+        `/api/gifs?q=${encodeURIComponent(
+          query
+        )}&limit=24`
       );
 
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
 
       throw new Error(
-        'GIPHY request failed'
+        'GIF request failed'
       );
 
     }
 
 
-    const result =
+    const data =
       await response.json();
 
 
@@ -992,93 +996,99 @@ async function loadGifs(
 
 
     if (
-      !result.data ||
-      result.data.length === 0
+      !data.gifs ||
+      data.gifs.length === 0
     ) {
 
       gifResults.innerHTML =
-        '<div class="gif-error">No GIFs found.</div>';
+        '<div class="gif-loading">No GIFs found 😅</div>';
 
       return;
 
     }
 
 
-    result.data.forEach(
-      (gif) => {
+    data.gifs.forEach(
+      gif => {
 
-        const image =
+        const img =
           document.createElement(
             'img'
           );
 
 
-        image.src =
-          gif.images
-            .fixed_width_small
-            .url;
+        img.src =
+          gif.preview ||
+          gif.url;
 
 
-        image.alt =
+        img.alt =
+          gif.title ||
           'GIF';
 
 
-        image.loading =
+        img.loading =
           'lazy';
 
 
-        image.addEventListener(
+        img.className =
+          'gif-result';
+
+
+        img.addEventListener(
           'click',
           () => {
 
             sendGif(
-              gif.images
-                .original
-                .url,
-
-              gif.images
-                .fixed_width
-                .url
+              gif
             );
 
 
-            gifPicker.classList.remove(
-              'open'
-            );
+            gifPanel.classList
+              .remove(
+                'open'
+              );
 
           }
         );
 
 
         gifResults.appendChild(
-          image
+          img
         );
 
       }
     );
 
-
   } catch (error) {
 
     console.error(
+      'GIF error:',
       error
     );
 
 
     gifResults.innerHTML =
-      '<div class="gif-error">Could not load GIFs.</div>';
+      '<div class="gif-loading">Unable to load GIFs ❌</div>';
 
   }
 
 }
 
 
-// Send GIF
-
 function sendGif(
-  url,
-  preview
+  gif
 ) {
+
+  if (
+    !gif ||
+    !gif.url
+  ) {
+
+    return;
+
+  }
+
 
   const name =
     nameInput.value.trim() ||
@@ -1089,322 +1099,21 @@ function sendGif(
     'gifShared',
     {
 
-      url,
+      url:
+        gif.url,
 
-      preview,
+      preview:
+        gif.preview ||
+        gif.url,
+
+      title:
+        gif.title ||
+        'GIF',
 
       name
 
     }
   );
-
-}
-
-
-// =====================================================
-// VOICE RECORDER
-// =====================================================
-
-let mediaRecorder =
-  null;
-
-let audioChunks =
-  [];
-
-let recording =
-  false;
-
-
-// Voice button
-
-voiceBtn.addEventListener(
-  'click',
-  () => {
-
-    if (
-      recording
-    ) {
-
-      stopRecording();
-
-    } else {
-
-      startRecording();
-
-    }
-
-  }
-);
-
-
-// Start recording
-
-async function startRecording() {
-
-  if (
-    !navigator.mediaDevices ||
-    !navigator.mediaDevices.getUserMedia
-  ) {
-
-    addSystem(
-      'Your browser does not support voice recording ❌'
-    );
-
-    return;
-
-  }
-
-
-  try {
-
-    const stream =
-      await navigator
-        .mediaDevices
-        .getUserMedia(
-          {
-            audio: true
-          }
-        );
-
-
-    audioChunks =
-      [];
-
-
-    let mimeType =
-      'audio/webm';
-
-
-    if (
-      MediaRecorder.isTypeSupported(
-        'audio/webm;codecs=opus'
-      )
-    ) {
-
-      mimeType =
-        'audio/webm;codecs=opus';
-
-    }
-
-
-    mediaRecorder =
-      new MediaRecorder(
-        stream,
-        {
-          mimeType
-        }
-      );
-
-
-    mediaRecorder.ondataavailable =
-      (event) => {
-
-        if (
-          event.data &&
-          event.data.size > 0
-        ) {
-
-          audioChunks.push(
-            event.data
-          );
-
-        }
-
-      };
-
-
-    mediaRecorder.onstop =
-      async () => {
-
-        const blob =
-          new Blob(
-            audioChunks,
-            {
-              type:
-                mimeType
-            }
-          );
-
-
-        stream
-          .getTracks()
-          .forEach(
-            track =>
-              track.stop()
-          );
-
-
-        await uploadVoice(
-          blob
-        );
-
-      };
-
-
-    mediaRecorder.start();
-
-
-    recording =
-      true;
-
-
-    voiceBtn.textContent =
-      '⏹️';
-
-
-    voiceBtn.classList.add(
-      'recording'
-    );
-
-
-    addSystem(
-      '🎤 Recording... click 🎤 again to send'
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      error
-    );
-
-
-    addSystem(
-      'Microphone permission is required 🎤'
-    );
-
-  }
-
-}
-
-
-// Stop recording
-
-function stopRecording() {
-
-  if (
-    mediaRecorder &&
-    recording
-  ) {
-
-    recording =
-      false;
-
-
-    mediaRecorder.stop();
-
-
-    voiceBtn.textContent =
-      '🎤';
-
-
-    voiceBtn.classList.remove(
-      'recording'
-    );
-
-  }
-
-}
-
-
-// Upload voice
-
-async function uploadVoice(
-  blob
-) {
-
-  const name =
-    nameInput.value.trim() ||
-    null;
-
-
-  const filename =
-    `voice-${Date.now()}.webm`;
-
-
-  const form =
-    new FormData();
-
-
-  form.append(
-    'file',
-    blob,
-    filename
-  );
-
-
-  form.append(
-    'filename',
-    filename
-  );
-
-
-  try {
-
-    const response =
-      await fetch(
-        '/upload',
-        {
-          method: 'POST',
-          body: form
-        }
-      );
-
-
-    if (
-      !response.ok
-    ) {
-
-      addSystem(
-        'Voice message upload failed ❌'
-      );
-
-      return;
-
-    }
-
-
-    const info =
-      await response.json();
-
-
-    socket.emit(
-      'fileShared',
-      {
-
-        link:
-          info.link,
-
-        filename:
-          info.filename,
-
-        size:
-          info.size,
-
-        mime:
-          info.mime,
-
-        ttlMinutes:
-          info.ttlMinutes,
-
-        name
-
-      }
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      error
-    );
-
-
-    addSystem(
-      'Voice message upload failed ❌'
-    );
-
-  }
 
 }
 
@@ -1449,8 +1158,10 @@ function addMessage(
     'name';
 
 
-  nameEl.textContent =
-    name || 'Anon';
+  nameEl.innerHTML =
+    name
+      ? safe(name)
+      : 'Anon';
 
 
   const timeEl =
@@ -1465,8 +1176,9 @@ function addMessage(
 
   timeEl.textContent =
     ' · ' +
-    new Date(at)
-      .toLocaleTimeString();
+    new Date(
+      at
+    ).toLocaleTimeString();
 
 
   const body =
@@ -1489,7 +1201,6 @@ function addMessage(
     nameEl
   );
 
-
   head.appendChild(
     timeEl
   );
@@ -1498,7 +1209,6 @@ function addMessage(
   el.appendChild(
     head
   );
-
 
   el.appendChild(
     body
@@ -1510,8 +1220,7 @@ function addMessage(
   );
 
 
-  chatArea.scrollTop =
-    chatArea.scrollHeight;
+  scrollToBottom();
 
 }
 
@@ -1521,7 +1230,7 @@ function addMessage(
 // =====================================================
 
 function addFileMessage(
-  file,
+  f,
   at
 ) {
 
@@ -1555,8 +1264,10 @@ function addFileMessage(
     'name';
 
 
-  who.textContent =
-    file.name || 'Anon';
+  who.innerHTML =
+    f.name
+      ? safe(f.name)
+      : 'Anon';
 
 
   const timeEl =
@@ -1571,14 +1282,14 @@ function addFileMessage(
 
   timeEl.textContent =
     ' · ' +
-    new Date(at)
-      .toLocaleTimeString();
+    new Date(
+      at
+    ).toLocaleTimeString();
 
 
   head.appendChild(
     who
   );
-
 
   head.appendChild(
     timeEl
@@ -1598,10 +1309,7 @@ function addFileMessage(
   // IMAGE
 
   if (
-    file.mime &&
-    file.mime.startsWith(
-      'image/'
-    )
+    isImage(f.mime)
   ) {
 
     const image =
@@ -1611,12 +1319,11 @@ function addFileMessage(
 
 
     image.src =
-      file.link;
+      f.link;
 
 
     image.alt =
-      file.filename ||
-      'Image';
+      f.filename;
 
 
     image.className =
@@ -1625,19 +1332,6 @@ function addFileMessage(
 
     image.loading =
       'lazy';
-
-
-    image.addEventListener(
-      'click',
-      () => {
-
-        window.open(
-          file.link,
-          '_blank'
-        );
-
-      }
-    );
 
 
     body.appendChild(
@@ -1656,10 +1350,10 @@ function addFileMessage(
 
 
     info.innerHTML =
-      `🖼️ <strong>${safe(
-        file.filename
+      `<strong>${safe(
+        f.filename
       )}</strong> · ${fmtSize(
-        file.size
+        f.size
       )} · `;
 
 
@@ -1670,12 +1364,10 @@ function addFileMessage(
 
 
     download.href =
-      file.link;
-
+      f.link;
 
     download.download =
-      file.filename;
-
+      f.filename;
 
     download.textContent =
       'Download';
@@ -1692,12 +1384,11 @@ function addFileMessage(
 
   }
 
-
-  // AUDIO / VOICE
+  // AUDIO
 
   else if (
-    file.mime &&
-    file.mime.startsWith(
+    f.mime &&
+    f.mime.startsWith(
       'audio/'
     )
   ) {
@@ -1712,12 +1403,16 @@ function addFileMessage(
       true;
 
 
+    audio.preload =
+      'metadata';
+
+
     audio.src =
-      file.link;
+      f.link;
 
 
     audio.className =
-      'voice-player';
+      'chat-audio';
 
 
     body.appendChild(
@@ -1735,26 +1430,9 @@ function addFileMessage(
       'file-info';
 
 
-    info.textContent =
-      `🎤 ${file.filename}`;
-
-
-    body.appendChild(
-      info
-    );
-
-  }
-
-
-  // NORMAL FILE
-
-  else {
-
-    body.innerHTML =
-      `📎 <strong>${safe(
-        file.filename
-      )}</strong> — ${fmtSize(
-        file.size
+    info.innerHTML =
+      `🎤 ${safe(
+        f.filename
       )} · `;
 
 
@@ -1765,12 +1443,49 @@ function addFileMessage(
 
 
     download.href =
-      file.link;
-
+      f.link;
 
     download.download =
-      file.filename;
+      f.filename;
 
+    download.textContent =
+      'Download';
+
+
+    info.appendChild(
+      download
+    );
+
+
+    body.appendChild(
+      info
+    );
+
+  }
+
+  // OTHER FILE
+
+  else {
+
+    body.innerHTML =
+      `📎 <strong>${safe(
+        f.filename
+      )}</strong> — ${fmtSize(
+        f.size
+      )} · `;
+
+
+    const download =
+      document.createElement(
+        'a'
+      );
+
+
+    download.href =
+      f.link;
+
+    download.download =
+      f.filename;
 
     download.textContent =
       'Download';
@@ -1780,34 +1495,33 @@ function addFileMessage(
       download
     );
 
-
-    const expiry =
-      document.createElement(
-        'span'
-      );
+  }
 
 
-    expiry.className =
-      'time';
-
-
-    expiry.textContent =
-      ` (expires in ${
-        file.ttlMinutes
-      }m)`;
-
-
-    body.appendChild(
-      expiry
+  const expiry =
+    document.createElement(
+      'div'
     );
 
-  }
+
+  expiry.className =
+    'expiry';
+
+
+  expiry.textContent =
+    `Expires in ${
+      f.ttlMinutes || 10
+    }m`;
+
+
+  body.appendChild(
+    expiry
+  );
 
 
   el.appendChild(
     head
   );
-
 
   el.appendChild(
     body
@@ -1819,14 +1533,13 @@ function addFileMessage(
   );
 
 
-  chatArea.scrollTop =
-    chatArea.scrollHeight;
+  scrollToBottom();
 
 }
 
 
 // =====================================================
-// ADD GIF
+// ADD GIF MESSAGE
 // =====================================================
 
 function addGifMessage(
@@ -1841,7 +1554,7 @@ function addGifMessage(
 
 
   el.className =
-    'msg';
+    'msg gif-message';
 
 
   const head =
@@ -1864,33 +1577,35 @@ function addGifMessage(
     'name';
 
 
-  who.textContent =
-    gif.name || 'Anon';
+  who.innerHTML =
+    gif.name
+      ? safe(gif.name)
+      : 'Anon';
 
 
-  const timeEl =
+  const time =
     document.createElement(
       'span'
     );
 
 
-  timeEl.className =
+  time.className =
     'time';
 
 
-  timeEl.textContent =
+  time.textContent =
     ' · ' +
-    new Date(at)
-      .toLocaleTimeString();
+    new Date(
+      at
+    ).toLocaleTimeString();
 
 
   head.appendChild(
     who
   );
 
-
   head.appendChild(
-    timeEl
+    time
   );
 
 
@@ -1915,6 +1630,7 @@ function addGifMessage(
 
 
   image.alt =
+    gif.title ||
     'GIF';
 
 
@@ -1931,10 +1647,28 @@ function addGifMessage(
   );
 
 
+  const label =
+    document.createElement(
+      'div'
+    );
+
+
+  label.className =
+    'gif-label';
+
+
+  label.textContent =
+    'GIF 🎬';
+
+
+  body.appendChild(
+    label
+  );
+
+
   el.appendChild(
     head
   );
-
 
   el.appendChild(
     body
@@ -1946,8 +1680,7 @@ function addGifMessage(
   );
 
 
-  chatArea.scrollTop =
-    chatArea.scrollHeight;
+  scrollToBottom();
 
 }
 
@@ -1979,45 +1712,317 @@ function addSystem(
   );
 
 
+  scrollToBottom();
+
+}
+
+
+// =====================================================
+// VOICE RECORDING
+// =====================================================
+
+let mediaRecorder =
+  null;
+
+let audioChunks =
+  [];
+
+let recording =
+  false;
+
+
+if (voiceBtn) {
+
+  voiceBtn.addEventListener(
+    'click',
+    async () => {
+
+      if (!recording) {
+
+        await startRecording();
+
+      } else {
+
+        stopRecording();
+
+      }
+
+    }
+  );
+
+}
+
+
+async function startRecording() {
+
+  try {
+
+    const stream =
+      await navigator.mediaDevices
+        .getUserMedia({
+          audio: true
+        });
+
+
+    audioChunks =
+      [];
+
+
+    mediaRecorder =
+      new MediaRecorder(
+        stream
+      );
+
+
+    mediaRecorder.addEventListener(
+      'dataavailable',
+      e => {
+
+        if (
+          e.data.size > 0
+        ) {
+
+          audioChunks.push(
+            e.data
+          );
+
+        }
+
+      }
+    );
+
+
+    mediaRecorder.addEventListener(
+      'stop',
+      async () => {
+
+        stream
+          .getTracks()
+          .forEach(
+            track =>
+              track.stop()
+          );
+
+
+        const blob =
+          new Blob(
+            audioChunks,
+            {
+              type:
+                mediaRecorder.mimeType ||
+                'audio/webm'
+            }
+          );
+
+
+        await uploadVoice(
+          blob
+        );
+
+      }
+    );
+
+
+    mediaRecorder.start();
+
+    recording =
+      true;
+
+
+    voiceBtn.textContent =
+      '⏹️';
+
+
+    voiceBtn.classList.add(
+      'recording'
+    );
+
+
+    addSystem(
+      '🎤 Recording... click 🎤 again to send'
+    );
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+
+    addSystem(
+      'Microphone permission denied ❌'
+    );
+
+  }
+
+}
+
+
+function stopRecording() {
+
+  if (
+    mediaRecorder &&
+    mediaRecorder.state !==
+      'inactive'
+  ) {
+
+    mediaRecorder.stop();
+
+  }
+
+
+  recording =
+    false;
+
+
+  voiceBtn.textContent =
+    '🎤';
+
+
+  voiceBtn.classList.remove(
+    'recording'
+  );
+
+}
+
+
+async function uploadVoice(
+  blob
+) {
+
+  try {
+
+    const name =
+      nameInput.value.trim() ||
+      null;
+
+
+    const filename =
+      `voice-${Date.now()}.webm`;
+
+
+    const form =
+      new FormData();
+
+
+    form.append(
+      'file',
+      blob,
+      filename
+    );
+
+
+    form.append(
+      'filename',
+      filename
+    );
+
+
+    const response =
+      await fetch(
+        '/upload',
+        {
+          method:
+            'POST',
+
+          body:
+            form
+        }
+      );
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        'Voice upload failed'
+      );
+
+    }
+
+
+    const info =
+      await response.json();
+
+
+    socket.emit(
+      'fileShared',
+      {
+
+        link:
+          info.link,
+
+        filename:
+          info.filename,
+
+        size:
+          info.size,
+
+        mime:
+          info.mime,
+
+        ttlMinutes:
+          info.ttlMinutes,
+
+        name
+
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+
+    addSystem(
+      'Voice message failed ❌'
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// HELPERS
+// =====================================================
+
+function scrollToBottom() {
+
   chatArea.scrollTop =
     chatArea.scrollHeight;
 
 }
 
 
-// =====================================================
-// SAFE HTML
-// =====================================================
-
 function safe(
-  value
+  s
 ) {
 
   return String(
-    value ?? ''
+    s ?? ''
   )
-    .replace(
-      /[&<>"]/g,
-      (char) => {
+  .replace(
+    /[&<>"]/g,
+    c => ({
+      '&':
+        '&amp;',
 
-        return {
+      '<':
+        '&lt;',
 
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;'
+      '>':
+        '&gt;',
 
-        }[char];
+      '"':
+        '&quot;'
 
-      }
-    );
+    }[c])
+  );
 
 }
 
-
-// =====================================================
-// LINKIFY
-// =====================================================
 
 function linkify(
   text
@@ -2031,12 +2036,8 @@ function linkify(
 }
 
 
-// =====================================================
-// FILE SIZE
-// =====================================================
-
 function fmtSize(
-  bytes
+  n
 ) {
 
   const units =
@@ -2048,36 +2049,34 @@ function fmtSize(
     ];
 
 
-  let index =
+  let i =
     0;
 
-
-  let value =
-    Number(bytes) || 0;
+  let v =
+    Number(n) || 0;
 
 
   while (
-    value >= 1024 &&
-    index <
-      units.length - 1
+    v >= 1024 &&
+    i < units.length - 1
   ) {
 
-    value /=
+    v /=
       1024;
 
-    index++;
+    i++;
 
   }
 
 
   return (
-    value.toFixed(
-      index === 0
+    v.toFixed(
+      i === 0
         ? 0
         : 1
     ) +
     ' ' +
-    units[index]
+    units[i]
   );
 
 }
