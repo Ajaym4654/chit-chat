@@ -1,5 +1,6 @@
 // =====================================================
 // ANON FUN CHAT - CLIENT.JS
+// Chat + GIF + Files + Voice + Shared YouTube
 // =====================================================
 
 const socket = io();
@@ -41,7 +42,7 @@ const totalUsersEl =
 
 
 // =====================================================
-// GIF ELEMENTS
+// GIF
 // =====================================================
 
 const gifBtn =
@@ -69,6 +70,37 @@ const voiceBtn =
 
 
 // =====================================================
+// YOUTUBE
+// =====================================================
+
+const youtubeSearch =
+  document.getElementById('youtubeSearch');
+
+const youtubeSearchBtn =
+  document.getElementById('youtubeSearchBtn');
+
+const youtubeResults =
+  document.getElementById('youtubeResults');
+
+const youtubePlayerPanel =
+  document.getElementById('youtubePlayerPanel');
+
+const youtubePlayerTitle =
+  document.getElementById('youtubePlayerTitle');
+
+const youtubeStatus =
+  document.getElementById('youtubeStatus');
+
+const youtubeCloseBtn =
+  document.getElementById('youtubeCloseBtn');
+
+const youtubePlayerContainer =
+  document.getElementById(
+    'youtubePlayer'
+  );
+
+
+// =====================================================
 // ANONYMOUS NAME
 // =====================================================
 
@@ -78,8 +110,1229 @@ const anonTag =
     .toString(36)
     .slice(2, 6);
 
-nameInput.placeholder =
-  `Name (optional, e.g., ${anonTag})`;
+if (nameInput) {
+
+  nameInput.placeholder =
+    `Name (optional, e.g., ${anonTag})`;
+
+}
+
+
+// =====================================================
+// YOUTUBE VARIABLES
+// =====================================================
+
+let youtubePlayer =
+  null;
+
+let youtubeReady =
+  false;
+
+let youtubeApiReady =
+  false;
+
+let pendingVideoId =
+  null;
+
+let pendingVideoTime =
+  0;
+
+let suppressYoutubeEvents =
+  false;
+
+let lastKnownYoutubeTime =
+  0;
+
+let currentYoutubeVideoId =
+  null;
+
+
+// =====================================================
+// LOAD YOUTUBE IFRAME API
+// =====================================================
+
+function loadYouTubeAPI() {
+
+  if (
+    document.getElementById(
+      'youtube-iframe-api'
+    )
+  ) {
+
+    return;
+
+  }
+
+  const script =
+    document.createElement(
+      'script'
+    );
+
+  script.id =
+    'youtube-iframe-api';
+
+  script.src =
+    'https://www.youtube.com/iframe_api';
+
+  document.head.appendChild(
+    script
+  );
+
+}
+
+loadYouTubeAPI();
+
+
+// =====================================================
+// YOUTUBE API CALLBACK
+// =====================================================
+
+window.onYouTubeIframeAPIReady =
+  function () {
+
+    youtubeApiReady =
+      true;
+
+    createYoutubePlayer();
+
+  };
+
+
+// =====================================================
+// CREATE YOUTUBE PLAYER
+// =====================================================
+
+function createYoutubePlayer() {
+
+  if (
+    !youtubePlayerContainer
+  ) {
+
+    return;
+
+  }
+
+  if (
+    youtubePlayer
+  ) {
+
+    return;
+
+  }
+
+  youtubePlayer =
+    new YT.Player(
+      'youtubePlayer',
+      {
+
+        width:
+          '100%',
+
+        height:
+          '180',
+
+        videoId:
+          pendingVideoId || '',
+
+        playerVars: {
+
+          autoplay:
+            0,
+
+          controls:
+            1,
+
+          rel:
+            0,
+
+          modestbranding:
+            1,
+
+          playsinline:
+            1
+
+        },
+
+        events: {
+
+          onReady:
+            onYoutubePlayerReady,
+
+          onStateChange:
+            onYoutubeStateChange
+
+        }
+
+      }
+    );
+
+}
+
+
+// =====================================================
+// YOUTUBE PLAYER READY
+// =====================================================
+
+function onYoutubePlayerReady() {
+
+  youtubeReady =
+    true;
+
+  if (
+    pendingVideoId
+  ) {
+
+    loadYoutubeVideoLocally(
+      pendingVideoId,
+      pendingVideoTime || 0
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// YOUTUBE PLAYER STATE CHANGE
+// =====================================================
+
+function onYoutubeStateChange(
+  event
+) {
+
+  if (
+    suppressYoutubeEvents
+  ) {
+
+    return;
+
+  }
+
+  if (
+    !youtubePlayer ||
+    typeof youtubePlayer.getCurrentTime !==
+      'function'
+  ) {
+
+    return;
+
+  }
+
+  const time =
+    youtubePlayer.getCurrentTime() || 0;
+
+  lastKnownYoutubeTime =
+    time;
+
+
+  // PLAYING
+  if (
+    event.data ===
+    YT.PlayerState.PLAYING
+  ) {
+
+    socket.emit(
+      'youtubePlay',
+      {
+
+        time:
+          time
+
+      }
+    );
+
+    updateYoutubeStatus(
+      '▶ Playing for everyone'
+    );
+
+  }
+
+
+  // PAUSED
+  else if (
+    event.data ===
+    YT.PlayerState.PAUSED
+  ) {
+
+    socket.emit(
+      'youtubePause',
+      {
+
+        time:
+          time
+
+      }
+    );
+
+    updateYoutubeStatus(
+      '⏸ Paused for everyone'
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// YOUTUBE SEARCH
+// =====================================================
+
+async function searchYoutube(
+  query
+) {
+
+  if (
+    !youtubeResults
+  ) {
+
+    return;
+
+  }
+
+  const cleanQuery =
+    String(
+      query || ''
+    )
+      .trim()
+      .slice(0, 100);
+
+  if (
+    !cleanQuery
+  ) {
+
+    youtubeResults.innerHTML =
+      '<div class="youtube-loading">Type a song or video name 🎵</div>';
+
+    return;
+
+  }
+
+  youtubeResults.innerHTML =
+    '<div class="youtube-loading">Searching YouTube... 🔎</div>';
+
+  try {
+
+    const response =
+      await fetch(
+        '/api/youtube/search?q=' +
+        encodeURIComponent(
+          cleanQuery
+        )
+      );
+
+    let data = {};
+
+    try {
+
+      data =
+        await response.json();
+
+    } catch {
+
+      data = {};
+
+    }
+
+    if (
+      !response.ok
+    ) {
+
+      throw new Error(
+        data.error ||
+        'YouTube search failed'
+      );
+
+    }
+
+    youtubeResults.innerHTML =
+      '';
+
+    if (
+      !data.videos ||
+      data.videos.length === 0
+    ) {
+
+      youtubeResults.innerHTML =
+        '<div class="youtube-loading">No videos found 😢</div>';
+
+      return;
+
+    }
+
+    data.videos.forEach(
+      video => {
+
+        const item =
+          document.createElement(
+            'button'
+          );
+
+        item.type =
+          'button';
+
+        item.className =
+          'youtube-result';
+
+        const thumbnail =
+          document.createElement(
+            'img'
+          );
+
+        thumbnail.src =
+          video.thumbnail;
+
+        thumbnail.alt =
+          video.title;
+
+        thumbnail.loading =
+          'lazy';
+
+        const info =
+          document.createElement(
+            'div'
+          );
+
+        info.className =
+          'youtube-result-info';
+
+        const title =
+          document.createElement(
+            'div'
+          );
+
+        title.className =
+          'youtube-result-title';
+
+        title.textContent =
+          video.title;
+
+        const channel =
+          document.createElement(
+            'div'
+          );
+
+        channel.className =
+          'youtube-result-channel';
+
+        channel.textContent =
+          video.channel || 'YouTube';
+
+        info.appendChild(
+          title
+        );
+
+        info.appendChild(
+          channel
+        );
+
+        item.appendChild(
+          thumbnail
+        );
+
+        item.appendChild(
+          info
+        );
+
+        item.addEventListener(
+          'click',
+          () => {
+
+            selectYoutubeVideo(
+              video
+            );
+
+          }
+        );
+
+        youtubeResults.appendChild(
+          item
+        );
+
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      'YouTube search error:',
+      error
+    );
+
+    youtubeResults.innerHTML =
+      '<div class="youtube-loading">YouTube search failed ❌</div>';
+
+  }
+
+}
+
+
+// =====================================================
+// SELECT YOUTUBE VIDEO
+// =====================================================
+
+function selectYoutubeVideo(
+  video
+) {
+
+  if (
+    !video ||
+    !video.id
+  ) {
+
+    return;
+
+  }
+
+  const videoId =
+    video.id;
+
+  currentYoutubeVideoId =
+    videoId;
+
+  pendingVideoId =
+    videoId;
+
+  pendingVideoTime =
+    0;
+
+
+  if (
+    youtubePlayerPanel
+  ) {
+
+    youtubePlayerPanel.classList.add(
+      'open'
+    );
+
+  }
+
+
+  if (
+    youtubePlayerTitle
+  ) {
+
+    youtubePlayerTitle.textContent =
+      video.title ||
+      'YouTube Music';
+
+  }
+
+
+  updateYoutubeStatus(
+    'Loading...'
+  );
+
+
+  // Send to everyone
+  socket.emit(
+    'youtubeLoad',
+    {
+
+      videoId:
+        videoId,
+
+      title:
+        video.title ||
+        ''
+
+    }
+  );
+
+
+  // Load locally immediately
+  if (
+    youtubeReady
+  ) {
+
+    loadYoutubeVideoLocally(
+      videoId,
+      0
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// LOAD VIDEO LOCALLY
+// =====================================================
+
+function loadYoutubeVideoLocally(
+  videoId,
+  time = 0
+) {
+
+  if (
+    !youtubePlayer ||
+    !youtubeReady
+  ) {
+
+    pendingVideoId =
+      videoId;
+
+    pendingVideoTime =
+      time;
+
+    return;
+
+  }
+
+  suppressYoutubeEvents =
+    true;
+
+  try {
+
+    youtubePlayer.loadVideoById({
+      videoId:
+        videoId,
+
+      startSeconds:
+        Number(time) || 0
+    });
+
+  } catch (error) {
+
+    console.error(
+      'YouTube load error:',
+      error
+    );
+
+  }
+
+  setTimeout(
+    () => {
+
+      suppressYoutubeEvents =
+        false;
+
+    },
+    800
+  );
+
+}
+
+
+// =====================================================
+// PLAY REMOTE
+// =====================================================
+
+function playYoutubeRemote(
+  videoId,
+  time
+) {
+
+  if (
+    !youtubePlayer ||
+    !youtubeReady
+  ) {
+
+    pendingVideoId =
+      videoId;
+
+    pendingVideoTime =
+      time || 0;
+
+    return;
+
+  }
+
+  suppressYoutubeEvents =
+    true;
+
+  try {
+
+    if (
+      currentYoutubeVideoId !==
+      videoId
+    ) {
+
+      currentYoutubeVideoId =
+        videoId;
+
+      youtubePlayer.loadVideoById({
+        videoId:
+          videoId,
+
+        startSeconds:
+          Number(time) || 0
+      });
+
+    } else {
+
+      youtubePlayer.seekTo(
+        Number(time) || 0,
+        true
+      );
+
+      youtubePlayer.playVideo();
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+  }
+
+  setTimeout(
+    () => {
+
+      suppressYoutubeEvents =
+        false;
+
+    },
+    1000
+  );
+
+}
+
+
+// =====================================================
+// PAUSE REMOTE
+// =====================================================
+
+function pauseYoutubeRemote(
+  time
+) {
+
+  if (
+    !youtubePlayer ||
+    !youtubeReady
+  ) {
+
+    return;
+
+  }
+
+  suppressYoutubeEvents =
+    true;
+
+  try {
+
+    youtubePlayer.seekTo(
+      Number(time) || 0,
+      true
+    );
+
+    youtubePlayer.pauseVideo();
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+  }
+
+  setTimeout(
+    () => {
+
+      suppressYoutubeEvents =
+        false;
+
+    },
+    500
+  );
+
+}
+
+
+// =====================================================
+// SEEK REMOTE
+// =====================================================
+
+function seekYoutubeRemote(
+  time
+) {
+
+  if (
+    !youtubePlayer ||
+    !youtubeReady
+  ) {
+
+    return;
+
+  }
+
+  suppressYoutubeEvents =
+    true;
+
+  try {
+
+    youtubePlayer.seekTo(
+      Number(time) || 0,
+      true
+    );
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+  }
+
+  setTimeout(
+    () => {
+
+      suppressYoutubeEvents =
+        false;
+
+    },
+    300
+  );
+
+}
+
+
+// =====================================================
+// YOUTUBE SOCKET - LOAD
+// =====================================================
+
+socket.on(
+  'youtubeLoad',
+  data => {
+
+    if (
+      !data ||
+      !data.videoId
+    ) {
+
+      return;
+
+    }
+
+    currentYoutubeVideoId =
+      data.videoId;
+
+    pendingVideoId =
+      data.videoId;
+
+    pendingVideoTime =
+      0;
+
+    if (
+      youtubePlayerPanel
+    ) {
+
+      youtubePlayerPanel.classList.add(
+        'open'
+      );
+
+    }
+
+    if (
+      youtubePlayerTitle
+    ) {
+
+      youtubePlayerTitle.textContent =
+        data.title ||
+        'YouTube Music';
+
+    }
+
+    updateYoutubeStatus(
+      'New song selected 🎵'
+    );
+
+    loadYoutubeVideoLocally(
+      data.videoId,
+      data.time || 0
+    );
+
+  }
+);
+
+
+// =====================================================
+// YOUTUBE SOCKET - PLAY
+// =====================================================
+
+socket.on(
+  'youtubePlay',
+  data => {
+
+    if (
+      !data ||
+      !data.videoId
+    ) {
+
+      return;
+
+    }
+
+    currentYoutubeVideoId =
+      data.videoId;
+
+    playYoutubeRemote(
+      data.videoId,
+      data.time || 0
+    );
+
+    updateYoutubeStatus(
+      '▶ Playing for everyone'
+    );
+
+  }
+);
+
+
+// =====================================================
+// YOUTUBE SOCKET - PAUSE
+// =====================================================
+
+socket.on(
+  'youtubePause',
+  data => {
+
+    if (
+      !data
+    ) {
+
+      return;
+
+    }
+
+    pauseYoutubeRemote(
+      data.time || 0
+    );
+
+    updateYoutubeStatus(
+      '⏸ Paused for everyone'
+    );
+
+  }
+);
+
+
+// =====================================================
+// YOUTUBE SOCKET - SEEK
+// =====================================================
+
+socket.on(
+  'youtubeSeek',
+  data => {
+
+    if (
+      !data
+    ) {
+
+      return;
+
+    }
+
+    seekYoutubeRemote(
+      data.time || 0
+    );
+
+  }
+);
+
+
+// =====================================================
+// YOUTUBE SOCKET - STOP
+// =====================================================
+
+socket.on(
+  'youtubeStop',
+  () => {
+
+    if (
+      youtubePlayer &&
+      youtubeReady
+    ) {
+
+      suppressYoutubeEvents =
+        true;
+
+      try {
+
+        youtubePlayer.stopVideo();
+
+      } catch {}
+
+      setTimeout(
+        () => {
+
+          suppressYoutubeEvents =
+            false;
+
+        },
+        400
+      );
+
+    }
+
+    currentYoutubeVideoId =
+      null;
+
+    if (
+      youtubePlayerPanel
+    ) {
+
+      youtubePlayerPanel.classList.remove(
+        'open'
+      );
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// YOUTUBE CURRENT STATE
+// =====================================================
+
+socket.on(
+  'youtubeState',
+  data => {
+
+    if (
+      !data ||
+      !data.videoId
+    ) {
+
+      return;
+
+    }
+
+    currentYoutubeVideoId =
+      data.videoId;
+
+    pendingVideoId =
+      data.videoId;
+
+    pendingVideoTime =
+      Number(
+        data.time
+      ) || 0;
+
+    if (
+      youtubePlayerPanel
+    ) {
+
+      youtubePlayerPanel.classList.add(
+        'open'
+      );
+
+    }
+
+    if (
+      youtubePlayerTitle
+    ) {
+
+      youtubePlayerTitle.textContent =
+        data.title ||
+        'YouTube Music';
+
+    }
+
+    if (
+      data.state ===
+      'playing'
+    ) {
+
+      playYoutubeRemote(
+        data.videoId,
+        data.time || 0
+      );
+
+      updateYoutubeStatus(
+        '▶ Music is playing'
+      );
+
+    } else {
+
+      loadYoutubeVideoLocally(
+        data.videoId,
+        data.time || 0
+      );
+
+      updateYoutubeStatus(
+        '⏸ Music is paused'
+      );
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// YOUTUBE SEARCH BUTTON
+// =====================================================
+
+if (
+  youtubeSearchBtn
+) {
+
+  youtubeSearchBtn.addEventListener(
+    'click',
+    () => {
+
+      searchYoutube(
+        youtubeSearch?.value
+      );
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// YOUTUBE SEARCH ENTER
+// =====================================================
+
+if (
+  youtubeSearch
+) {
+
+  youtubeSearch.addEventListener(
+    'keydown',
+    e => {
+
+      if (
+        e.key ===
+        'Enter'
+      ) {
+
+        e.preventDefault();
+
+        searchYoutube(
+          youtubeSearch.value
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// CLOSE YOUTUBE
+// =====================================================
+
+if (
+  youtubeCloseBtn
+) {
+
+  youtubeCloseBtn.addEventListener(
+    'click',
+    () => {
+
+      socket.emit(
+        'youtubeStop'
+      );
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// YOUTUBE SEEK DETECTION
+// =====================================================
+
+// Polling is used to detect manual seeking.
+// It only emits when there is a significant jump.
+
+let previousYoutubeTime =
+  0;
+
+setInterval(
+  () => {
+
+    if (
+      !youtubePlayer ||
+      !youtubeReady ||
+      suppressYoutubeEvents
+    ) {
+
+      return;
+
+    }
+
+    try {
+
+      const state =
+        youtubePlayer.getPlayerState();
+
+      if (
+        state !==
+        YT.PlayerState.PLAYING &&
+        state !==
+        YT.PlayerState.PAUSED
+      ) {
+
+        return;
+
+      }
+
+      const currentTime =
+        youtubePlayer.getCurrentTime() || 0;
+
+      const difference =
+        Math.abs(
+          currentTime -
+          previousYoutubeTime
+        );
+
+      // Detect manual seek
+      if (
+        difference > 2.5
+      ) {
+
+        socket.emit(
+          'youtubeSeek',
+          {
+
+            time:
+              currentTime
+
+          }
+        );
+
+      }
+
+      previousYoutubeTime =
+        currentTime;
+
+      lastKnownYoutubeTime =
+        currentTime;
+
+    } catch {}
+
+  },
+  1000
+);
+
+
+// =====================================================
+// UPDATE YOUTUBE STATUS
+// =====================================================
+
+function updateYoutubeStatus(
+  text
+) {
+
+  if (
+    youtubeStatus
+  ) {
+
+    youtubeStatus.textContent =
+      text;
+
+  }
+
+}
 
 
 // =====================================================
@@ -88,16 +1341,20 @@ nameInput.placeholder =
 
 socket.on(
   'userStats',
-  (stats) => {
+  stats => {
 
-    if (liveUsersEl) {
+    if (
+      liveUsersEl
+    ) {
 
       liveUsersEl.textContent =
         stats.live ?? 0;
 
     }
 
-    if (totalUsersEl) {
+    if (
+      totalUsersEl
+    ) {
 
       totalUsersEl.textContent =
         stats.total ?? 0;
@@ -109,15 +1366,17 @@ socket.on(
 
 
 // =====================================================
-// JOIN
+// HELLO
 // =====================================================
 
 socket.emit(
   'hello',
   {
+
     name:
       nameInput.value.trim() ||
       null
+
   }
 );
 
@@ -126,14 +1385,17 @@ socket.emit(
 // NOTIFICATION SOUND
 // =====================================================
 
-let audioContext = null;
+let audioContext =
+  null;
 
 
 function playNotificationSound() {
 
   try {
 
-    if (!audioContext) {
+    if (
+      !audioContext
+    ) {
 
       audioContext =
         new (
@@ -158,61 +1420,53 @@ function playNotificationSound() {
     const gain =
       audioContext.createGain();
 
-
     oscillator.type =
       'sine';
-
 
     oscillator.frequency.setValueAtTime(
       880,
       audioContext.currentTime
     );
 
-
     oscillator.frequency.exponentialRampToValueAtTime(
       660,
-      audioContext.currentTime + 0.12
+      audioContext.currentTime +
+      0.12
     );
-
 
     gain.gain.setValueAtTime(
       0.0001,
       audioContext.currentTime
     );
 
-
     gain.gain.exponentialRampToValueAtTime(
       0.12,
-      audioContext.currentTime + 0.01
+      audioContext.currentTime +
+      0.01
     );
-
 
     gain.gain.exponentialRampToValueAtTime(
       0.0001,
-      audioContext.currentTime + 0.16
+      audioContext.currentTime +
+      0.16
     );
 
-
-    oscillator.connect(gain);
+    oscillator.connect(
+      gain
+    );
 
     gain.connect(
       audioContext.destination
     );
 
-
     oscillator.start();
 
     oscillator.stop(
-      audioContext.currentTime + 0.17
+      audioContext.currentTime +
+      0.17
     );
 
-  } catch (error) {
-
-    console.log(
-      'Notification sound unavailable'
-    );
-
-  }
+  } catch {}
 
 }
 
@@ -227,7 +1481,9 @@ document.addEventListener(
 
     try {
 
-      if (!audioContext) {
+      if (
+        !audioContext
+      ) {
 
         audioContext =
           new (
@@ -250,13 +1506,14 @@ document.addEventListener(
 
   },
   {
-    once: true
+    once:
+      true
   }
 );
 
 
 // =====================================================
-// BROWSER NOTIFICATIONS
+// NOTIFICATIONS
 // =====================================================
 
 async function requestNotifications() {
@@ -283,7 +1540,6 @@ async function requestNotifications() {
   }
 
 }
-
 
 requestNotifications();
 
@@ -325,7 +1581,8 @@ function showNotification(
       title,
       {
         body,
-        icon: '/favicon.ico'
+        icon:
+          '/favicon.ico'
       }
     );
 
@@ -335,12 +1592,12 @@ function showNotification(
 
 
 // =====================================================
-// CHAT MESSAGE RECEIVE
+// CHAT RECEIVE
 // =====================================================
 
 socket.on(
   'chat',
-  (data) => {
+  data => {
 
     addMessage(
       data.name,
@@ -348,16 +1605,11 @@ socket.on(
       data.at
     );
 
-
     playNotificationSound();
-
 
     showNotification(
       '💬 Anon Fun Chat',
-      `${
-        data.name ||
-        'Anon'
-      }: ${data.text}`
+      `${data.name || 'Anon'}: ${data.text}`
     );
 
   }
@@ -365,12 +1617,12 @@ socket.on(
 
 
 // =====================================================
-// SYSTEM JOIN / LEAVE
+// SYSTEM
 // =====================================================
 
 socket.on(
   'system',
-  (evt) => {
+  evt => {
 
     if (
       evt.type ===
@@ -386,10 +1638,7 @@ socket.on(
         } ✨`
       );
 
-    }
-
-
-    else if (
+    } else if (
       evt.type ===
       'leave'
     ) {
@@ -410,25 +1659,18 @@ socket.on(
 
 socket.on(
   'fileShared',
-  (f) => {
+  f => {
 
     addFileMessage(
       f,
       f.at
     );
 
-
     playNotificationSound();
-
 
     showNotification(
       '📎 New file',
-      `${
-        f.name ||
-        'Anon'
-      } shared ${
-        f.filename
-      }`
+      `${f.name || 'Anon'} shared ${f.filename}`
     );
 
   }
@@ -441,23 +1683,18 @@ socket.on(
 
 socket.on(
   'gifShared',
-  (gif) => {
+  gif => {
 
     addGifMessage(
       gif,
       gif.at
     );
 
-
     playNotificationSound();
-
 
     showNotification(
       '😂 New GIF',
-      `${
-        gif.name ||
-        'Anon'
-      } sent a GIF`
+      `${gif.name || 'Anon'} sent a GIF`
     );
 
   }
@@ -474,39 +1711,36 @@ const controls =
   );
 
 
-if (controls) {
+if (
+  controls
+) {
 
   controls.addEventListener(
     'submit',
-    (e) => {
+    e => {
 
       e.preventDefault();
-
 
       const text =
         msgInput.value.trim();
 
-
       if (
         !text &&
-        fileInput.files.length === 0
+        fileInput.files.length ===
+          0
       ) {
 
         return;
 
       }
 
-
       const name =
         nameInput.value.trim() ||
         null;
 
-
-      // ---------------------------------------------
-      // TEXT
-      // ---------------------------------------------
-
-      if (text) {
+      if (
+        text
+      ) {
 
         socket.emit(
           'chat',
@@ -516,20 +1750,13 @@ if (controls) {
           }
         );
 
-
         msgInput.value =
           '';
-
 
         msgInput.style.height =
           'auto';
 
       }
-
-
-      // ---------------------------------------------
-      // FILES
-      // ---------------------------------------------
 
       if (
         fileInput.files.length >
@@ -541,16 +1768,13 @@ if (controls) {
             fileInput.files
           );
 
-
         uploadFiles(
           files,
           name
         );
 
-
         fileInput.value =
           '';
-
 
         fileQueue.innerHTML =
           '';
@@ -564,7 +1788,7 @@ if (controls) {
 
 
 // =====================================================
-// AUTO GROW TEXTAREA
+// AUTO GROW
 // =====================================================
 
 msgInput.addEventListener(
@@ -573,7 +1797,6 @@ msgInput.addEventListener(
 
     msgInput.style.height =
       'auto';
-
 
     msgInput.style.height =
       Math.min(
@@ -586,15 +1809,16 @@ msgInput.addEventListener(
 
 
 // =====================================================
-// ENTER TO SEND
+// ENTER SEND
 // =====================================================
 
 msgInput.addEventListener(
   'keydown',
-  (e) => {
+  e => {
 
     if (
-      e.key === 'Enter' &&
+      e.key ===
+        'Enter' &&
       !e.shiftKey
     ) {
 
@@ -619,12 +1843,10 @@ fileInput.addEventListener(
     fileQueue.innerHTML =
       '';
 
-
     const files =
       Array.from(
         fileInput.files
       );
-
 
     for (
       const f of files
@@ -635,28 +1857,22 @@ fileInput.addEventListener(
           'span'
         );
 
-
       chip.className =
         'file-chip';
 
-
       chip.textContent =
         `${f.name} (${fmtSize(f.size)})`;
-
 
       const x =
         document.createElement(
           'span'
         );
 
-
       x.textContent =
         '✕';
 
-
       x.className =
         'x';
-
 
       x.onclick =
         () => {
@@ -665,35 +1881,29 @@ fileInput.addEventListener(
             Array.from(
               fileInput.files
             )
-            .filter(
-              ff =>
-                ff !== f
-            );
-
+              .filter(
+                ff =>
+                  ff !== f
+              );
 
           const dt =
             new DataTransfer();
-
 
           remain.forEach(
             ff =>
               dt.items.add(ff)
           );
 
-
           fileInput.files =
             dt.files;
-
 
           chip.remove();
 
         };
 
-
       chip.appendChild(
         x
       );
-
 
       fileQueue.appendChild(
         chip
@@ -723,31 +1933,31 @@ async function uploadFiles(
       const form =
         new FormData();
 
-
       form.append(
         'file',
         file,
         file.name
       );
 
-
       form.append(
         'filename',
         file.name
       );
 
-
       const res =
         await fetch(
           '/upload',
           {
-            method: 'POST',
-            body: form
+            method:
+              'POST',
+            body:
+              form
           }
         );
 
-
-      if (!res.ok) {
+      if (
+        !res.ok
+      ) {
 
         addSystem(
           `Upload failed for ${file.name} ❌`
@@ -757,46 +1967,39 @@ async function uploadFiles(
 
       }
 
-
       const info =
         await res.json();
 
-
-      const fileInfo = {
-
-        link:
-          info.link,
-
-        filename:
-          info.filename,
-
-        size:
-          info.size,
-
-        mime:
-          info.mime,
-
-        ttlMinutes:
-          info.ttlMinutes,
-
-        name:
-          name || null
-
-      };
-
-
       socket.emit(
         'fileShared',
-        fileInfo
-      );
+        {
 
+          link:
+            info.link,
+
+          filename:
+            info.filename,
+
+          size:
+            info.size,
+
+          mime:
+            info.mime,
+
+          ttlMinutes:
+            info.ttlMinutes,
+
+          name:
+            name || null
+
+        }
+      );
 
     } catch (error) {
 
       console.error(
         error
       );
-
 
       addSystem(
         `Upload failed for ${file.name} ❌`
@@ -818,8 +2021,11 @@ function isImage(
 ) {
 
   return (
-    typeof mime === 'string' &&
-    mime.startsWith('image/')
+    typeof mime ===
+      'string' &&
+    mime.startsWith(
+      'image/'
+    )
   );
 
 }
@@ -847,14 +2053,16 @@ const EMOJIS = [
 
 function buildEmojiPicker() {
 
-  if (!emojiPicker) {
-    return;
-  }
+  if (
+    !emojiPicker
+  ) {
 
+    return;
+
+  }
 
   emojiPicker.innerHTML =
     '';
-
 
   EMOJIS.forEach(
     emoji => {
@@ -864,14 +2072,11 @@ function buildEmojiPicker() {
           'button'
         );
 
-
       button.type =
         'button';
 
-
       button.textContent =
         emoji;
-
 
       button.addEventListener(
         'click',
@@ -881,11 +2086,9 @@ function buildEmojiPicker() {
             msgInput.selectionStart ??
             msgInput.value.length;
 
-
           const end =
             msgInput.selectionEnd ??
             msgInput.value.length;
-
 
           msgInput.value =
             msgInput.value.slice(
@@ -897,18 +2100,14 @@ function buildEmojiPicker() {
               end
             );
 
-
           msgInput.focus();
 
-
-          emojiPicker.classList
-            .remove(
-              'open'
-            );
+          emojiPicker.classList.remove(
+            'open'
+          );
 
         }
       );
-
 
       emojiPicker.appendChild(
         button
@@ -923,7 +2122,9 @@ function buildEmojiPicker() {
 buildEmojiPicker();
 
 
-if (emojiBtn) {
+if (
+  emojiBtn
+) {
 
   emojiBtn.addEventListener(
     'click',
@@ -932,7 +2133,6 @@ if (emojiBtn) {
       emojiPicker.classList.toggle(
         'open'
       );
-
 
       if (
         gifPicker
@@ -967,14 +2167,15 @@ if (
         'open'
       );
 
-
       if (
         gifPicker.classList.contains(
           'open'
         )
       ) {
 
-        if (emojiPicker) {
+        if (
+          emojiPicker
+        ) {
 
           emojiPicker.classList.remove(
             'open'
@@ -982,17 +2183,18 @@ if (
 
         }
 
-
-        if (gifSearch) {
+        if (
+          gifSearch
+        ) {
 
           gifSearch.focus();
 
         }
 
-
         if (
           gifResults &&
-          gifResults.children.length === 0
+          gifResults.children.length ===
+            0
         ) {
 
           searchGifs(
@@ -1010,21 +2212,19 @@ if (
 
 
 // =====================================================
-// GIF SEARCH BUTTON
+// GIF SEARCH
 // =====================================================
 
-if (gifSearchBtn) {
+if (
+  gifSearchBtn
+) {
 
   gifSearchBtn.addEventListener(
     'click',
     () => {
 
-      const query =
-        gifSearch.value.trim();
-
-
       searchGifs(
-        query ||
+        gifSearch.value.trim() ||
         'funny'
       );
 
@@ -1034,29 +2234,23 @@ if (gifSearchBtn) {
 }
 
 
-// =====================================================
-// GIF SEARCH ENTER
-// =====================================================
-
-if (gifSearch) {
+if (
+  gifSearch
+) {
 
   gifSearch.addEventListener(
     'keydown',
-    (e) => {
+    e => {
 
       if (
-        e.key === 'Enter'
+        e.key ===
+        'Enter'
       ) {
 
         e.preventDefault();
 
-
-        const query =
-          gifSearch.value.trim();
-
-
         searchGifs(
-          query ||
+          gifSearch.value.trim() ||
           'funny'
         );
 
@@ -1076,27 +2270,24 @@ async function searchGifs(
   query = 'funny'
 ) {
 
-  if (!gifResults) {
+  if (
+    !gifResults
+  ) {
 
     return;
 
   }
 
-
   const cleanQuery =
     String(
-      query || 'funny'
+      query ||
+      'funny'
     )
-    .trim()
-    .slice(
-      0,
-      100
-    );
-
+      .trim()
+      .slice(0, 100);
 
   gifResults.innerHTML =
     '<div class="gif-loading">Searching GIFs... 🎬</div>';
-
 
   try {
 
@@ -1107,23 +2298,12 @@ async function searchGifs(
         )}`
       );
 
+    const data =
+      await res.json();
 
-    let data = null;
-
-
-    try {
-
-      data =
-        await res.json();
-
-    } catch {
-
-      data = {};
-
-    }
-
-
-    if (!res.ok) {
+    if (
+      !res.ok
+    ) {
 
       throw new Error(
         data.error ||
@@ -1132,24 +2312,21 @@ async function searchGifs(
 
     }
 
-
     gifResults.innerHTML =
       '';
 
-
     if (
       !data.gifs ||
-      data.gifs.length === 0
+      data.gifs.length ===
+        0
     ) {
 
       gifResults.innerHTML =
         '<div class="gif-loading">No GIFs found 😢</div>';
 
-
       return;
 
     }
-
 
     data.gifs.forEach(
       gif => {
@@ -1159,24 +2336,19 @@ async function searchGifs(
             'img'
           );
 
-
         img.src =
           gif.preview ||
           gif.url;
-
 
         img.alt =
           gif.title ||
           'GIF';
 
-
         img.className =
           'gif-item';
 
-
         img.loading =
           'lazy';
-
 
         img.addEventListener(
           'click',
@@ -1186,15 +2358,12 @@ async function searchGifs(
               gif
             );
 
-
-            gifPicker.classList
-              .remove(
-                'open'
-              );
+            gifPicker.classList.remove(
+              'open'
+            );
 
           }
         );
-
 
         gifResults.appendChild(
           img
@@ -1203,19 +2372,14 @@ async function searchGifs(
       }
     );
 
-
   } catch (error) {
 
     console.error(
-      'GIF error:',
       error
     );
 
-
     gifResults.innerHTML =
-      `<div class="gif-loading">
-        GIFs could not be loaded ❌
-      </div>`;
+      '<div class="gif-loading">GIFs could not be loaded ❌</div>';
 
   }
 
@@ -1239,12 +2403,6 @@ function sendGif(
 
   }
 
-
-  const name =
-    nameInput.value.trim() ||
-    null;
-
-
   socket.emit(
     'gifShared',
     {
@@ -1260,7 +2418,9 @@ function sendGif(
         gif.title ||
         'GIF',
 
-      name
+      name:
+        nameInput.value.trim() ||
+        null
 
     }
   );
@@ -1283,46 +2443,37 @@ function addMessage(
       'div'
     );
 
-
   el.className =
     'msg';
-
 
   const head =
     document.createElement(
       'div'
     );
 
-
   head.className =
     'head';
-
 
   const nameEl =
     document.createElement(
       'span'
     );
 
-
   nameEl.className =
     'name';
-
 
   nameEl.innerHTML =
     name
       ? safe(name)
       : 'Anon';
 
-
   const timeEl =
     document.createElement(
       'span'
     );
 
-
   timeEl.className =
     'time';
-
 
   timeEl.textContent =
     ' · ' +
@@ -1330,47 +2481,38 @@ function addMessage(
       at
     ).toLocaleTimeString();
 
-
   const body =
     document.createElement(
       'div'
     );
 
-
   body.className =
     'body';
-
 
   body.innerHTML =
     linkify(
       safe(text)
     );
 
-
   head.appendChild(
     nameEl
   );
-
 
   head.appendChild(
     timeEl
   );
 
-
   el.appendChild(
     head
   );
-
 
   el.appendChild(
     body
   );
 
-
   chatArea.appendChild(
     el
   );
-
 
   scrollToBottom();
 
@@ -1391,46 +2533,37 @@ function addFileMessage(
       'div'
     );
 
-
   el.className =
     'msg';
-
 
   const head =
     document.createElement(
       'div'
     );
 
-
   head.className =
     'head';
-
 
   const who =
     document.createElement(
       'span'
     );
 
-
   who.className =
     'name';
-
 
   who.innerHTML =
     f.name
       ? safe(f.name)
       : 'Anon';
 
-
   const timeEl =
     document.createElement(
       'span'
     );
 
-
   timeEl.className =
     'time';
-
 
   timeEl.textContent =
     ' · ' +
@@ -1438,30 +2571,21 @@ function addFileMessage(
       at
     ).toLocaleTimeString();
 
-
   head.appendChild(
     who
   );
 
-
   head.appendChild(
     timeEl
   );
-
 
   const body =
     document.createElement(
       'div'
     );
 
-
   body.className =
     'body';
-
-
-  // ---------------------------------------------
-  // IMAGE
-  // ---------------------------------------------
 
   if (
     isImage(f.mime)
@@ -1472,52 +2596,41 @@ function addFileMessage(
         'img'
       );
 
-
     image.src =
       f.link;
-
 
     image.alt =
       f.filename;
 
-
     image.className =
       'chat-image';
-
 
     image.loading =
       'lazy';
 
-
     body.appendChild(
       image
     );
-
 
     const info =
       document.createElement(
         'div'
       );
 
-
     info.className =
       'file-info';
-
 
     const strong =
       document.createElement(
         'strong'
       );
 
-
     strong.textContent =
       f.filename;
-
 
     info.appendChild(
       strong
     );
-
 
     info.appendChild(
       document.createTextNode(
@@ -1525,42 +2638,29 @@ function addFileMessage(
       )
     );
 
-
     const download =
       document.createElement(
         'a'
       );
 
-
     download.href =
       f.link;
-
 
     download.download =
       f.filename;
 
-
     download.textContent =
       'Download';
-
 
     info.appendChild(
       download
     );
 
-
     body.appendChild(
       info
     );
 
-  }
-
-
-  // ---------------------------------------------
-  // AUDIO
-  // ---------------------------------------------
-
-  else if (
+  } else if (
     f.mime &&
     f.mime.startsWith(
       'audio/'
@@ -1572,37 +2672,29 @@ function addFileMessage(
         'audio'
       );
 
-
     audio.controls =
       true;
-
 
     audio.preload =
       'metadata';
 
-
     audio.src =
       f.link;
-
 
     audio.className =
       'chat-audio';
 
-
     body.appendChild(
       audio
     );
-
 
     const info =
       document.createElement(
         'div'
       );
 
-
     info.className =
       'file-info';
-
 
     info.appendChild(
       document.createTextNode(
@@ -1610,42 +2702,29 @@ function addFileMessage(
       )
     );
 
-
     const download =
       document.createElement(
         'a'
       );
 
-
     download.href =
       f.link;
-
 
     download.download =
       f.filename;
 
-
     download.textContent =
       'Download';
-
 
     info.appendChild(
       download
     );
 
-
     body.appendChild(
       info
     );
 
-  }
-
-
-  // ---------------------------------------------
-  // OTHER FILE
-  // ---------------------------------------------
-
-  else {
+  } else {
 
     body.appendChild(
       document.createTextNode(
@@ -1653,21 +2732,17 @@ function addFileMessage(
       )
     );
 
-
     const strong =
       document.createElement(
         'strong'
       );
 
-
     strong.textContent =
       f.filename;
-
 
     body.appendChild(
       strong
     );
-
 
     body.appendChild(
       document.createTextNode(
@@ -1675,24 +2750,19 @@ function addFileMessage(
       )
     );
 
-
     const download =
       document.createElement(
         'a'
       );
 
-
     download.href =
       f.link;
-
 
     download.download =
       f.filename;
 
-
     download.textContent =
       'Download';
-
 
     body.appendChild(
       download
@@ -1700,42 +2770,32 @@ function addFileMessage(
 
   }
 
-
   const expiry =
     document.createElement(
       'div'
     );
 
-
   expiry.className =
     'expiry';
 
-
   expiry.textContent =
-    `Expires in ${
-      f.ttlMinutes || 10
-    }m`;
-
+    `Expires in ${f.ttlMinutes || 10}m`;
 
   body.appendChild(
     expiry
   );
 
-
   el.appendChild(
     head
   );
-
 
   el.appendChild(
     body
   );
 
-
   chatArea.appendChild(
     el
   );
-
 
   scrollToBottom();
 
@@ -1756,45 +2816,36 @@ function addGifMessage(
       'div'
     );
 
-
   el.className =
     'msg gif-message';
-
 
   const head =
     document.createElement(
       'div'
     );
 
-
   head.className =
     'head';
-
 
   const who =
     document.createElement(
       'span'
     );
 
-
   who.className =
     'name';
-
 
   who.textContent =
     gif.name ||
     'Anon';
-
 
   const time =
     document.createElement(
       'span'
     );
 
-
   time.className =
     'time';
-
 
   time.textContent =
     ' · ' +
@@ -1802,49 +2853,39 @@ function addGifMessage(
       at
     ).toLocaleTimeString();
 
-
   head.appendChild(
     who
   );
 
-
   head.appendChild(
     time
   );
-
 
   const body =
     document.createElement(
       'div'
     );
 
-
   body.className =
     'body';
-
 
   const image =
     document.createElement(
       'img'
     );
 
-
   image.src =
     gif.url;
-
 
   image.alt =
     gif.title ||
     'GIF';
 
-
   image.className =
     'chat-gif';
 
-
   image.loading =
     'lazy';
-
 
   image.addEventListener(
     'error',
@@ -1852,7 +2893,8 @@ function addGifMessage(
 
       if (
         gif.preview &&
-        image.src !== gif.preview
+        image.src !==
+          gif.preview
       ) {
 
         image.src =
@@ -1863,45 +2905,21 @@ function addGifMessage(
     }
   );
 
-
   body.appendChild(
     image
   );
-
-
-  const label =
-    document.createElement(
-      'div'
-    );
-
-
-  label.className =
-    'gif-label';
-
-
-  label.textContent =
-    'GIF 🎬';
-
-
-  body.appendChild(
-    label
-  );
-
 
   el.appendChild(
     head
   );
 
-
   el.appendChild(
     body
   );
 
-
   chatArea.appendChild(
     el
   );
-
 
   scrollToBottom();
 
@@ -1921,19 +2939,15 @@ function addSystem(
       'div'
     );
 
-
   el.className =
     'system';
-
 
   el.textContent =
     text;
 
-
   chatArea.appendChild(
     el
   );
-
 
   scrollToBottom();
 
@@ -1954,13 +2968,17 @@ let recording =
   false;
 
 
-if (voiceBtn) {
+if (
+  voiceBtn
+) {
 
   voiceBtn.addEventListener(
     'click',
     async () => {
 
-      if (!recording) {
+      if (
+        !recording
+      ) {
 
         await startRecording();
 
@@ -1975,10 +2993,6 @@ if (voiceBtn) {
 
 }
 
-
-// =====================================================
-// START RECORDING
-// =====================================================
 
 async function startRecording() {
 
@@ -1997,21 +3011,18 @@ async function startRecording() {
 
     }
 
-
     const stream =
       await navigator.mediaDevices
         .getUserMedia({
-          audio: true
+          audio:
+            true
         });
-
 
     audioChunks =
       [];
 
-
     let mimeType =
       '';
-
 
     if (
       MediaRecorder.isTypeSupported(
@@ -2022,9 +3033,7 @@ async function startRecording() {
       mimeType =
         'audio/webm;codecs=opus';
 
-    }
-
-    else if (
+    } else if (
       MediaRecorder.isTypeSupported(
         'audio/webm'
       )
@@ -2034,7 +3043,6 @@ async function startRecording() {
         'audio/webm';
 
     }
-
 
     mediaRecorder =
       mimeType
@@ -2048,14 +3056,14 @@ async function startRecording() {
             stream
           );
 
-
     mediaRecorder.addEventListener(
       'dataavailable',
       e => {
 
         if (
           e.data &&
-          e.data.size > 0
+          e.data.size >
+            0
         ) {
 
           audioChunks.push(
@@ -2066,7 +3074,6 @@ async function startRecording() {
 
       }
     );
-
 
     mediaRecorder.addEventListener(
       'stop',
@@ -2079,7 +3086,6 @@ async function startRecording() {
               track.stop()
           );
 
-
         const blob =
           new Blob(
             audioChunks,
@@ -2090,7 +3096,6 @@ async function startRecording() {
             }
           );
 
-
         await uploadVoice(
           blob
         );
@@ -2098,39 +3103,30 @@ async function startRecording() {
       }
     );
 
-
     mediaRecorder.start();
-
 
     recording =
       true;
 
-
     voiceBtn.textContent =
       '⏹️';
-
 
     voiceBtn.classList.add(
       'recording'
     );
 
-
     addSystem(
       '🎤 Recording... click 🎤 again to send'
     );
 
-
   } catch (error) {
 
     console.error(
-      'Microphone error:',
       error
     );
 
-
     recording =
       false;
-
 
     addSystem(
       'Microphone permission denied ❌'
@@ -2140,10 +3136,6 @@ async function startRecording() {
 
 }
 
-
-// =====================================================
-// STOP RECORDING
-// =====================================================
 
 function stopRecording() {
 
@@ -2157,14 +3149,11 @@ function stopRecording() {
 
   }
 
-
   recording =
     false;
 
-
   voiceBtn.textContent =
     '🎤';
-
 
   voiceBtn.classList.remove(
     'recording'
@@ -2172,10 +3161,6 @@ function stopRecording() {
 
 }
 
-
-// =====================================================
-// UPLOAD VOICE
-// =====================================================
 
 async function uploadVoice(
   blob
@@ -2187,14 +3172,11 @@ async function uploadVoice(
       nameInput.value.trim() ||
       null;
 
-
     const filename =
       `voice-${Date.now()}.webm`;
 
-
     const form =
       new FormData();
-
 
     form.append(
       'file',
@@ -2202,27 +3184,28 @@ async function uploadVoice(
       filename
     );
 
-
     form.append(
       'filename',
       filename
     );
 
-
     const response =
       await fetch(
         '/upload',
         {
+
           method:
             'POST',
 
           body:
             form
+
         }
       );
 
-
-    if (!response.ok) {
+    if (
+      !response.ok
+    ) {
 
       throw new Error(
         'Voice upload failed'
@@ -2230,10 +3213,8 @@ async function uploadVoice(
 
     }
 
-
     const info =
       await response.json();
-
 
     socket.emit(
       'fileShared',
@@ -2259,14 +3240,11 @@ async function uploadVoice(
       }
     );
 
-
   } catch (error) {
 
     console.error(
-      'Voice upload error:',
       error
     );
-
 
     addSystem(
       'Voice message failed ❌'
@@ -2278,18 +3256,22 @@ async function uploadVoice(
 
 
 // =====================================================
-// CLOSE PICKERS WHEN CLICKING OUTSIDE
+// CLOSE PICKERS
 // =====================================================
 
 document.addEventListener(
   'click',
-  (e) => {
+  e => {
 
     if (
       emojiPicker &&
       emojiBtn &&
-      !emojiPicker.contains(e.target) &&
-      !emojiBtn.contains(e.target)
+      !emojiPicker.contains(
+        e.target
+      ) &&
+      !emojiBtn.contains(
+        e.target
+      )
     ) {
 
       emojiPicker.classList.remove(
@@ -2298,12 +3280,15 @@ document.addEventListener(
 
     }
 
-
     if (
       gifPicker &&
       gifBtn &&
-      !gifPicker.contains(e.target) &&
-      !gifBtn.contains(e.target)
+      !gifPicker.contains(
+        e.target
+      ) &&
+      !gifBtn.contains(
+        e.target
+      )
     ) {
 
       gifPicker.classList.remove(
@@ -2335,24 +3320,24 @@ function safe(
   return String(
     s ?? ''
   )
-  .replace(
-    /[&<>"]/g,
-    c => ({
+    .replace(
+      /[&<>"]/g,
+      c => ({
 
-      '&':
-        '&amp;',
+        '&':
+          '&amp;',
 
-      '<':
-        '&lt;',
+        '<':
+          '&lt;',
 
-      '>':
-        '&gt;',
+        '>':
+          '&gt;',
 
-      '"':
-        '&quot;'
+        '"':
+          '&quot;'
 
-    }[c])
-  );
+      }[c])
+    );
 
 }
 
@@ -2381,28 +3366,24 @@ function fmtSize(
       'GB'
     ];
 
-
   let i =
     0;
-
 
   let v =
     Number(n) || 0;
 
-
   while (
     v >= 1024 &&
-    i < units.length - 1
+    i <
+      units.length - 1
   ) {
 
     v /=
       1024;
 
-
     i++;
 
   }
-
 
   return (
     v.toFixed(
@@ -2418,7 +3399,7 @@ function fmtSize(
 
 
 // =====================================================
-// CLIENT READY
+// READY
 // =====================================================
 
 console.log(
