@@ -26,19 +26,17 @@ const PORT = process.env.PORT || 3000;
 // =====================================================
 
 app.use(express.static('public'));
-GET /api/youtube/search
 
 
 // =====================================================
-// GIPHY API
-// API KEY STAYS ON SERVER
+// API KEYS
+// KEYS STAY ON SERVER
 // =====================================================
 
 const GIPHY_API_KEY =
   process.env.GIPHY_API_KEY;
 
-
-const YOUTUBE_API_KEY = 
+const YOUTUBE_API_KEY =
   process.env.YOUTUBE_API_KEY;
 
 
@@ -165,6 +163,138 @@ app.get(
       res.status(500).json({
         error:
           'Unable to search GIFs'
+      });
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// YOUTUBE SEARCH ENDPOINT
+// =====================================================
+
+app.get(
+  '/api/youtube/search',
+  async (req, res) => {
+
+    try {
+
+      if (!YOUTUBE_API_KEY) {
+
+        console.error(
+          'YOUTUBE_API_KEY is not configured on server.'
+        );
+
+        return res.status(500).json({
+          error:
+            'YOUTUBE_API_KEY is not configured on server'
+        });
+
+      }
+
+
+      const query =
+        String(
+          req.query.q || ''
+        )
+          .trim()
+          .slice(0, 100);
+
+
+      if (!query) {
+
+        return res.status(400).json({
+          error:
+            'Search query is required'
+        });
+
+      }
+
+
+      const url =
+        'https://www.googleapis.com/youtube/v3/search' +
+        '?part=snippet' +
+        '&type=video' +
+        '&maxResults=10' +
+        '&q=' +
+        encodeURIComponent(query) +
+        '&key=' +
+        encodeURIComponent(
+          YOUTUBE_API_KEY
+        );
+
+
+      const response =
+        await fetch(url);
+
+
+      if (!response.ok) {
+
+        const errorText =
+          await response.text();
+
+        console.error(
+          'YouTube API error:',
+          response.status,
+          errorText
+        );
+
+        return res.status(502).json({
+          error:
+            'YouTube search failed'
+        });
+
+      }
+
+
+      const data =
+        await response.json();
+
+
+      const videos =
+        (data.items || [])
+          .map(
+            item => ({
+
+              videoId:
+                item.id?.videoId,
+
+              title:
+                item.snippet?.title || '',
+
+              channel:
+                item.snippet?.channelTitle || '',
+
+              thumbnail:
+                item.snippet?.thumbnails?.medium?.url ||
+                item.snippet?.thumbnails?.default?.url ||
+                ''
+
+            })
+          )
+          .filter(
+            video =>
+              video.videoId
+          );
+
+
+      res.json({
+        videos
+      });
+
+
+    } catch (error) {
+
+      console.error(
+        'YouTube search error:',
+        error
+      );
+
+      res.status(500).json({
+        error:
+          'Unable to search YouTube'
       });
 
     }
@@ -319,10 +449,6 @@ app.post(
         }
       );
 
-
-      // IMPORTANT:
-      // Using normal string concatenation
-      // to avoid template literal syntax issues.
 
       const link =
         '/download/' + id;
@@ -691,6 +817,139 @@ io.on(
 
 
     // =================================================
+    // YOUTUBE MUSIC - PLAY
+    // =================================================
+
+    socket.on(
+      'youtubePlay',
+      (data) => {
+
+        if (
+          !data ||
+          !data.videoId
+        ) {
+
+          return;
+
+        }
+
+
+        const videoId =
+          String(
+            data.videoId
+          ).slice(
+            0,
+            50
+          );
+
+
+        const time =
+          Math.max(
+            0,
+            Number(data.time) || 0
+          );
+
+
+        const name =
+          typeof data.name ===
+          'string'
+
+            ? data.name.slice(
+                0,
+                20
+              )
+
+            : null;
+
+
+        io.emit(
+          'youtubePlay',
+          {
+
+            videoId:
+              videoId,
+
+            time:
+              time,
+
+            name:
+              name,
+
+            at:
+              Date.now()
+
+          }
+        );
+
+      }
+    );
+
+
+    // =================================================
+    // YOUTUBE MUSIC - PAUSE
+    // =================================================
+
+    socket.on(
+      'youtubePause',
+      (data) => {
+
+        const time =
+          Math.max(
+            0,
+            Number(data?.time) || 0
+          );
+
+
+        io.emit(
+          'youtubePause',
+          {
+
+            time:
+              time,
+
+            at:
+              Date.now()
+
+          }
+        );
+
+      }
+    );
+
+
+    // =================================================
+    // YOUTUBE MUSIC - SEEK
+    // =================================================
+
+    socket.on(
+      'youtubeSeek',
+      (data) => {
+
+        const time =
+          Math.max(
+            0,
+            Number(data?.time) || 0
+          );
+
+
+        io.emit(
+          'youtubeSeek',
+          {
+
+            time:
+              time,
+
+            at:
+              Date.now()
+
+          }
+        );
+
+      }
+    );
+
+
+    // =================================================
     // USER DISCONNECTED
     // =================================================
 
@@ -746,6 +1005,16 @@ server.listen(
       'GIPHY API: ' +
       (
         GIPHY_API_KEY
+          ? 'Configured'
+          : 'NOT CONFIGURED'
+      )
+    );
+
+
+    console.log(
+      'YouTube API: ' +
+      (
+        YOUTUBE_API_KEY
           ? 'Configured'
           : 'NOT CONFIGURED'
       )
