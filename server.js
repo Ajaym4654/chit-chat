@@ -1,3 +1,4 @@
+```javascript
 // =====================================================
 // ANONYMOUS FUN CHAT - SERVER.JS
 // =====================================================
@@ -7,169 +8,188 @@ const http = require('http');
 const { Server } = require('socket.io');
 const multer = require('multer');
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
+// =====================================================
+// APP SETUP
+// =====================================================
+
+const app = express();
+
+const server =
+  http.createServer(app);
+
+const io =
+  new Server(server);
+
+
+const PORT =
+  process.env.PORT || 3000;
+
 
 // =====================================================
 // SERVE FRONTEND
 // =====================================================
 
-app.use(express.static('public'));
+app.use(
+  express.static('public')
+);
 
-const GIPHY_API_KEY = process.env.GIPHY_API_KEY;
-
-app.get('/api/gifs/search', async (req, res) => {
-  try {
-    if (!GIPHY_API_KEY) {
-      return res.status(500).json({
-        error: 'GIPHY_API_KEY is not configured on server'
-      });
-    }
-
-    const query = String(req.query.q || 'funny').trim();
-
-    const limit = 20;
-
-    const url =
-      `https://api.giphy.com/v1/gifs/search` +
-      `?api_key=${encodeURIComponent(GIPHY_API_KEY)}` +
-      `&q=${encodeURIComponent(query)}` +
-      `&limit=${limit}` +
-      `&rating=pg-13` +
-      `&lang=en`;
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('GIPHY API error:', errorText);
-
-      return res.status(502).json({
-        error: 'GIPHY request failed'
-      });
-    }
-
-    const data = await response.json();
-
-    const gifs = (data.data || []).map(gif => ({
-      id: gif.id,
-      title: gif.title,
-      url: gif.images?.original?.url,
-      preview:
-        gif.images?.fixed_width?.url ||
-        gif.images?.downsized?.url ||
-        gif.images?.original?.url
-    })).filter(gif => gif.url);
-
-    res.json({ gifs });
-
-  } catch (error) {
-    console.error('GIF search error:', error);
-
-    res.status(500).json({
-      error: 'Unable to search GIFs'
-    });
-  }
-});
 
 // =====================================================
-// GIPHY API PROXY
+// GIPHY API
 // API KEY STAYS ON SERVER
 // =====================================================
 
-app.get('/api/gifs', async (req, res) => {
+const GIPHY_API_KEY =
+  process.env.GIPHY_API_KEY;
 
-  try {
 
-    const apiKey = process.env.GIPHY_API_KEY;
+// =====================================================
+// GIPHY SEARCH
+// =====================================================
 
-    if (!apiKey) {
+app.get(
+  '/api/gifs/search',
+  async (req, res) => {
 
-      return res.status(500).json({
-        error: 'GIPHY API key is not configured on server.'
+    try {
+
+      if (!GIPHY_API_KEY) {
+
+        console.error(
+          'GIPHY_API_KEY is not configured.'
+        );
+
+
+        return res.status(500).json({
+
+          error:
+            'GIPHY_API_KEY is not configured on server'
+
+        });
+
+      }
+
+
+      const query =
+        String(
+          req.query.q ||
+          'funny'
+        )
+        .trim()
+        .slice(
+          0,
+          100
+        );
+
+
+      const limit =
+        20;
+
+
+      const url =
+        'https://api.giphy.com/v1/gifs/search' +
+        '?api_key=' +
+        encodeURIComponent(
+          GIPHY_API_KEY
+        ) +
+        '&q=' +
+        encodeURIComponent(
+          query || 'funny'
+        ) +
+        '&limit=' +
+        limit +
+        '&rating=pg-13' +
+        '&lang=en';
+
+
+      const response =
+        await fetch(url);
+
+
+      if (!response.ok) {
+
+        const errorText =
+          await response.text();
+
+
+        console.error(
+          'GIPHY API error:',
+          response.status,
+          errorText
+        );
+
+
+        return res.status(502).json({
+
+          error:
+            'GIPHY request failed'
+
+        });
+
+      }
+
+
+      const data =
+        await response.json();
+
+
+      const gifs =
+        (data.data || [])
+          .map(
+            gif => ({
+
+              id:
+                gif.id,
+
+              title:
+                gif.title ||
+                '',
+
+              url:
+                gif.images?.original?.url ||
+                '',
+
+              preview:
+                gif.images?.fixed_width?.url ||
+                gif.images?.fixed_width_small?.url ||
+                gif.images?.downsized?.url ||
+                gif.images?.preview_gif?.url ||
+                gif.images?.original?.url ||
+                ''
+
+            })
+          )
+          .filter(
+            gif =>
+              gif.url
+          );
+
+
+      res.json({
+        gifs
       });
 
-    }
 
-    const query =
-      (req.query.q || 'funny')
-        .toString()
-        .slice(0, 100);
-
-    const limit = Math.min(
-      Math.max(
-        parseInt(req.query.limit || '24', 10),
-        1
-      ),
-      50
-    );
-
-    const url =
-      'https://api.giphy.com/v1/gifs/search' +
-      '?api_key=' + encodeURIComponent(apiKey) +
-      '&q=' + encodeURIComponent(query) +
-      '&limit=' + limit +
-      '&rating=pg-13';
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
+    } catch (error) {
 
       console.error(
-        'GIPHY API error:',
-        response.status
+        'GIF search error:',
+        error
       );
 
-      return res.status(response.status).json({
-        error: 'GIPHY request failed.'
+
+      res.status(500).json({
+
+        error:
+          'Unable to search GIFs'
+
       });
 
     }
 
-    const data = await response.json();
-
-    const gifs =
-      (data.data || [])
-        .map(gif => ({
-
-          id: gif.id,
-
-          title:
-            gif.title || '',
-
-          url:
-            gif.images?.original?.url || '',
-
-          preview:
-            gif.images?.fixed_width_small?.url ||
-            gif.images?.preview_gif?.url ||
-            gif.images?.original?.url ||
-            ''
-
-        }))
-        .filter(gif => gif.url);
-
-    res.json({
-      gifs
-    });
-
-  } catch (error) {
-
-    console.error(
-      'GIPHY error:',
-      error
-    );
-
-    res.status(500).json({
-      error: 'Unable to load GIFs.'
-    });
-
   }
-
-});
+);
 
 
 // =====================================================
@@ -177,12 +197,16 @@ app.get('/api/gifs', async (req, res) => {
 // EPHEMERAL - RAM ONLY
 // =====================================================
 
-const storage = new Map();
+const storage =
+  new Map();
 
-const TTL_MINUTES = parseInt(
-  process.env.FILE_TTL_MINUTES || '10',
-  10
-);
+
+const TTL_MINUTES =
+  parseInt(
+    process.env.FILE_TTL_MINUTES ||
+    '10',
+    10
+  );
 
 
 // =====================================================
@@ -190,21 +214,37 @@ const TTL_MINUTES = parseInt(
 // EVERY 1 MINUTE
 // =====================================================
 
-setInterval(() => {
+setInterval(
+  () => {
 
-  const now = Date.now();
+    const now =
+      Date.now();
 
-  for (const [id, file] of storage.entries()) {
 
-    if (file.expiresAt <= now) {
+    for (
+      const [
+        id,
+        file
+      ]
+      of storage.entries()
+    ) {
 
-      storage.delete(id);
+      if (
+        file.expiresAt <=
+        now
+      ) {
+
+        storage.delete(
+          id
+        );
+
+      }
 
     }
 
-  }
-
-}, 60 * 1000);
+  },
+  60 * 1000
+);
 
 
 // =====================================================
@@ -212,15 +252,20 @@ setInterval(() => {
 // MAX FILE SIZE = 50MB
 // =====================================================
 
-const upload = multer({
+const upload =
+  multer({
 
-  storage: multer.memoryStorage(),
+    storage:
+      multer.memoryStorage(),
 
-  limits: {
-    fileSize: 50 * 1024 * 1024
-  }
+    limits: {
 
-});
+      fileSize:
+        50 * 1024 * 1024
+
+    }
+
+  });
 
 
 // =====================================================
@@ -237,7 +282,10 @@ app.post(
       if (!req.file) {
 
         return res.status(400).json({
-          error: 'No file uploaded'
+
+          error:
+            'No file uploaded'
+
         });
 
       }
@@ -247,6 +295,7 @@ app.post(
         Math.random()
           .toString(36)
           .slice(2) +
+
         Date.now()
           .toString(36);
 
@@ -263,28 +312,38 @@ app.post(
         );
 
 
-      const filename = safeName;
+      const filename =
+        safeName;
 
 
-      storage.set(id, {
+      const expiresAt =
+        Date.now() +
+        TTL_MINUTES *
+        60 *
+        1000;
 
-        buffer:
-          req.file.buffer,
 
-        mime:
-          req.file.mimetype,
+      storage.set(
+        id,
+        {
 
-        filename:
-          filename,
+          buffer:
+            req.file.buffer,
 
-        size:
-          req.file.size,
+          mime:
+            req.file.mimetype,
 
-        expiresAt:
-          Date.now() +
-          TTL_MINUTES * 60 * 1000
+          filename:
+            filename,
 
-      });
+          size:
+            req.file.size,
+
+          expiresAt:
+            expiresAt
+
+        }
+      );
 
 
       const link =
@@ -310,6 +369,7 @@ app.post(
 
       });
 
+
     } catch (error) {
 
       console.error(
@@ -317,8 +377,12 @@ app.post(
         error
       );
 
+
       res.status(500).json({
-        error: 'Upload failed'
+
+        error:
+          'Upload failed'
+
       });
 
     }
@@ -379,7 +443,8 @@ app.get(
 // TOTAL USERS
 // =====================================================
 
-let totalUsers = 0;
+let totalUsers =
+  0;
 
 
 // =====================================================
@@ -393,9 +458,9 @@ io.on(
     totalUsers++;
 
 
-    // -------------------------------------------------
+    // =================================================
     // USER STATS
-    // -------------------------------------------------
+    // =================================================
 
     function sendUserStats() {
 
@@ -418,18 +483,24 @@ io.on(
     sendUserStats();
 
 
-    // -------------------------------------------------
+    // =================================================
     // HELLO / JOIN
-    // -------------------------------------------------
+    // =================================================
 
     socket.on(
       'hello',
       (payload) => {
 
         const name =
-          typeof payload?.name === 'string'
+          typeof payload?.name ===
+          'string'
+
             ? payload.name
-                .slice(0, 20)
+                .slice(
+                  0,
+                  20
+                )
+
             : null;
 
 
@@ -444,7 +515,8 @@ io.on(
               Date.now(),
 
             name:
-              name || null
+              name ||
+              null
 
           }
         );
@@ -453,22 +525,26 @@ io.on(
     );
 
 
-    // -------------------------------------------------
+    // =================================================
     // CHAT MESSAGE
-    // -------------------------------------------------
+    // =================================================
 
     socket.on(
       'chat',
       (msg) => {
 
         let text =
-          typeof msg?.text === 'string'
+          typeof msg?.text ===
+          'string'
+
             ? msg.text
+
             : '';
 
 
         if (
-          text.length > 2000
+          text.length >
+          2000
         ) {
 
           text =
@@ -481,14 +557,24 @@ io.on(
 
 
         const name =
-          typeof msg?.name === 'string'
+          typeof msg?.name ===
+          'string'
+
             ? msg.name
-                .slice(0, 20)
+                .slice(
+                  0,
+                  20
+                )
+
             : null;
 
 
-        if (!text.trim()) {
+        if (
+          !text.trim()
+        ) {
+
           return;
+
         }
 
 
@@ -496,11 +582,16 @@ io.on(
           'chat',
           {
 
-            text,
+            text:
 
-            name,
+              text,
+
+            name:
+
+              name,
 
             at:
+
               Date.now()
 
           }
@@ -510,9 +601,9 @@ io.on(
     );
 
 
-    // -------------------------------------------------
+    // =================================================
     // FILE SHARED
-    // -------------------------------------------------
+    // =================================================
 
     socket.on(
       'fileShared',
@@ -540,7 +631,9 @@ io.on(
               'file',
 
             size:
-              Number(fileInfo.size) || 0,
+              Number(
+                fileInfo.size
+              ) || 0,
 
             mime:
               fileInfo.mime ||
@@ -549,11 +642,19 @@ io.on(
             ttlMinutes:
               Number(
                 fileInfo.ttlMinutes
-              ) || TTL_MINUTES,
+              ) ||
+              TTL_MINUTES,
 
             name:
-              typeof fileInfo.name === 'string'
-                ? fileInfo.name.slice(0, 20)
+              typeof fileInfo.name ===
+              'string'
+
+                ? fileInfo.name
+                    .slice(
+                      0,
+                      20
+                    )
+
                 : null,
 
             at:
@@ -566,9 +667,9 @@ io.on(
     );
 
 
-    // -------------------------------------------------
+    // =================================================
     // GIF SHARED
-    // -------------------------------------------------
+    // =================================================
 
     socket.on(
       'gifShared',
@@ -600,8 +701,15 @@ io.on(
               'GIF',
 
             name:
-              typeof gifInfo.name === 'string'
-                ? gifInfo.name.slice(0, 20)
+              typeof gifInfo.name ===
+              'string'
+
+                ? gifInfo.name
+                    .slice(
+                      0,
+                      20
+                    )
+
                 : null,
 
             at:
@@ -614,9 +722,9 @@ io.on(
     );
 
 
-    // -------------------------------------------------
+    // =================================================
     // USER DISCONNECTED
-    // -------------------------------------------------
+    // =================================================
 
     socket.on(
       'disconnect',
@@ -657,13 +765,15 @@ server.listen(
       `Anon Fun Chat running on port ${PORT}`
     );
 
+
     console.log(
       `File expiry: ${TTL_MINUTES} minutes`
     );
 
+
     console.log(
       `GIPHY API: ${
-        process.env.GIPHY_API_KEY
+        GIPHY_API_KEY
           ? 'Configured'
           : 'NOT CONFIGURED'
       }`
@@ -671,3 +781,4 @@ server.listen(
 
   }
 );
+```
