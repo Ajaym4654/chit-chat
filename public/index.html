@@ -17,7 +17,7 @@
 
   <meta
     name="description"
-    content="Anon Fun Chat - Anonymous group chat with GIFs, emojis, voice messages, music and file sharing."
+    content="Anon Fun Chat - Anonymous group chat with GIFs, emojis, voice messages, files and shared YouTube music."
   >
 
   <title>Anon Fun Chat</title>
@@ -31,6 +31,321 @@
     rel="icon"
     href="data:;base64,iVBORw0KGgo="
   >
+
+  <style>
+
+    /* =================================================
+       YOUTUBE PANEL
+    ================================================= */
+
+    .youtube-panel {
+
+      position: fixed;
+
+      right: 20px;
+
+      bottom: 90px;
+
+      width: 330px;
+
+      max-width: calc(100vw - 30px);
+
+      background: rgba(255,255,255,.97);
+
+      border: 1px solid #e2e8f0;
+
+      border-radius: 16px;
+
+      box-shadow:
+        0 18px 45px rgba(15,23,42,.18);
+
+      overflow: hidden;
+
+      z-index: 1000;
+
+      display: none;
+
+    }
+
+
+    .youtube-panel.open {
+
+      display: block;
+
+    }
+
+
+    .youtube-header {
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      gap: 10px;
+
+      padding: 10px 12px;
+
+      border-bottom: 1px solid #e2e8f0;
+
+    }
+
+
+    .youtube-header-title {
+
+      font-weight: 700;
+
+      font-size: 14px;
+
+      min-width: 0;
+
+    }
+
+
+    .youtube-close {
+
+      border: 0;
+
+      background: transparent;
+
+      cursor: pointer;
+
+      font-size: 18px;
+
+      padding: 3px 7px;
+
+    }
+
+
+    #youtubePlayer {
+
+      width: 100%;
+
+      background: #000;
+
+    }
+
+
+    .youtube-title {
+
+      padding: 8px 12px 2px;
+
+      font-size: 13px;
+
+      font-weight: 600;
+
+      white-space: nowrap;
+
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+
+    }
+
+
+    .youtube-status {
+
+      padding: 3px 12px 9px;
+
+      font-size: 11px;
+
+      color: #64748b;
+
+    }
+
+
+    /* =================================================
+       YOUTUBE SEARCH
+    ================================================= */
+
+    .youtube-search-box {
+
+      padding: 10px;
+
+      border-bottom: 1px solid #e2e8f0;
+
+    }
+
+
+    .youtube-search-row {
+
+      display: flex;
+
+      gap: 7px;
+
+    }
+
+
+    .youtube-search-row input {
+
+      flex: 1;
+
+      min-width: 0;
+
+      padding: 9px 10px;
+
+      border: 1px solid #cbd5e1;
+
+      border-radius: 9px;
+
+      outline: none;
+
+      font-size: 13px;
+
+    }
+
+
+    .youtube-search-row button {
+
+      border: 0;
+
+      border-radius: 9px;
+
+      padding: 9px 12px;
+
+      cursor: pointer;
+
+      background: #ef4444;
+
+      color: white;
+
+      font-weight: 600;
+
+    }
+
+
+    .youtube-results {
+
+      max-height: 260px;
+
+      overflow-y: auto;
+
+      padding: 7px;
+
+    }
+
+
+    .youtube-result {
+
+      width: 100%;
+
+      display: flex;
+
+      gap: 9px;
+
+      text-align: left;
+
+      border: 0;
+
+      background: transparent;
+
+      padding: 7px;
+
+      border-radius: 9px;
+
+      cursor: pointer;
+
+    }
+
+
+    .youtube-result:hover {
+
+      background: #f1f5f9;
+
+    }
+
+
+    .youtube-result img {
+
+      width: 92px;
+
+      height: 55px;
+
+      object-fit: cover;
+
+      border-radius: 7px;
+
+      flex-shrink: 0;
+
+    }
+
+
+    .youtube-result-info {
+
+      min-width: 0;
+
+    }
+
+
+    .youtube-result-title {
+
+      font-size: 12px;
+
+      font-weight: 600;
+
+      line-height: 1.35;
+
+      display: -webkit-box;
+
+      -webkit-line-clamp: 2;
+
+      -webkit-box-orient: vertical;
+
+      overflow: hidden;
+
+    }
+
+
+    .youtube-result-channel {
+
+      margin-top: 4px;
+
+      font-size: 10px;
+
+      color: #64748b;
+
+      white-space: nowrap;
+
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+
+    }
+
+
+    .youtube-loading {
+
+      text-align: center;
+
+      padding: 18px 8px;
+
+      color: #64748b;
+
+      font-size: 12px;
+
+    }
+
+
+    /* =================================================
+       MOBILE
+    ================================================= */
+
+    @media (max-width: 640px) {
+
+      .youtube-panel {
+
+        right: 10px;
+
+        bottom: 80px;
+
+        width: calc(100vw - 20px);
+
+      }
+
+    }
+
+  </style>
 
 </head>
 
@@ -48,10 +363,15 @@
   >
 
     <span class="circle circle-1"></span>
+
     <span class="circle circle-2"></span>
+
     <span class="circle circle-3"></span>
+
     <span class="circle circle-4"></span>
+
     <span class="circle circle-5"></span>
+
     <span class="circle circle-6"></span>
 
   </div>
@@ -76,7 +396,6 @@
 
 
       <div class="header-right">
-
 
         <div class="meta">
 
@@ -121,427 +440,220 @@
 
         </div>
 
-
       </div>
 
     </header>
 
 
     <!-- ========================================
-         MAIN CONTENT
+         CHAT AREA
     ========================================= -->
 
-    <div class="main-layout">
+    <main
+      id="chatArea"
+      aria-live="polite"
+      aria-label="Group chat messages"
+    ></main>
 
 
-      <!-- ======================================
-           CHAT SECTION
-      ======================================= -->
+    <!-- ========================================
+         CONTROLS
+    ========================================= -->
 
-      <section class="chat-section">
-
-
-        <!-- CHAT AREA -->
-
-        <main
-          id="chatArea"
-          aria-live="polite"
-          aria-label="Group chat messages"
-        ></main>
+    <form
+      id="controls"
+      autocomplete="off"
+    >
 
 
-        <!-- ====================================
-             CONTROLS
-        ===================================== -->
+      <!-- NAME ROW -->
 
-        <form
-          id="controls"
+      <div class="row name-row">
+
+        <input
+          id="name"
+          type="text"
+          placeholder="Name (optional)"
+          maxlength="20"
           autocomplete="off"
         >
 
 
-          <!-- ==================================
-               NAME ROW
-          =================================== -->
+        <!-- EMOJI PICKER -->
 
-          <div class="row name-row">
+        <div
+          class="emoji-picker"
+          id="emojiPicker"
+          aria-hidden="true"
+        ></div>
 
+
+        <!-- GIF PICKER -->
+
+        <div
+          id="gifPicker"
+          class="gif-picker"
+        >
+
+          <div class="gif-search">
 
             <input
-              id="name"
+              id="gifSearch"
               type="text"
-              placeholder="Name (optional)"
-              maxlength="20"
+              placeholder="Search GIFs..."
               autocomplete="off"
+              maxlength="100"
+              aria-label="Search GIFs"
             >
 
-
-            <!-- ================================
-                 EMOJI PICKER
-            ================================= -->
-
-            <div
-              class="emoji-picker"
-              id="emojiPicker"
-              aria-hidden="true"
-            ></div>
-
-
-            <!-- ================================
-                 GIF PICKER
-            ================================= -->
-
-            <div
-              id="gifPicker"
-              class="gif-picker"
+            <button
+              type="button"
+              id="gifSearchBtn"
             >
-
-
-              <div class="gif-search">
-
-
-                <input
-                  id="gifSearch"
-                  type="text"
-                  placeholder="Search GIFs..."
-                  autocomplete="off"
-                  maxlength="100"
-                  aria-label="Search GIFs"
-                >
-
-
-                <button
-                  type="button"
-                  id="gifSearchBtn"
-                  title="Search GIFs"
-                >
-                  Search
-                </button>
-
-
-              </div>
-
-
-              <div
-                id="gifResults"
-                class="gif-results"
-                aria-live="polite"
-              ></div>
-
-
-            </div>
-
+              Search
+            </button>
 
           </div>
 
-
-          <!-- ==================================
-               MESSAGE ROW
-          =================================== -->
-
-          <div class="row message-row">
-
-
-            <textarea
-              id="msg"
-              rows="1"
-              placeholder="Type a message… (press Enter to send)"
-              maxlength="2000"
-              autocomplete="off"
-            ></textarea>
-
-
-            <!-- EMOJI -->
-
-            <button
-              type="button"
-              id="emojiBtn"
-              title="Emoji"
-              aria-label="Emoji"
-            >
-              😊
-            </button>
-
-
-            <!-- GIF -->
-
-            <button
-              type="button"
-              id="gifBtn"
-              class="gif-btn"
-              title="GIF"
-              aria-label="GIF"
-            >
-              GIF
-            </button>
-
-
-            <!-- VOICE -->
-
-            <button
-              type="button"
-              id="voiceBtn"
-              title="Voice message"
-              aria-label="Voice message"
-            >
-              🎤
-            </button>
-
-
-            <!-- FILE -->
-
-            <label
-              class="fileLabel"
-              title="Send a file"
-              aria-label="Attach file"
-            >
-
-              📎
-
-              <input
-                id="fileInput"
-                type="file"
-                accept="image/*,audio/*,.pdf,.doc,.docx,.txt"
-                hidden
-              >
-
-            </label>
-
-
-            <!-- SEND -->
-
-            <button
-              id="sendBtn"
-              class="send"
-              type="submit"
-            >
-              Send
-            </button>
-
-
-          </div>
-
-
-          <!-- FILE QUEUE -->
 
           <div
-            id="fileQueue"
-            class="file-queue"
+            id="gifResults"
+            class="gif-results"
             aria-live="polite"
           ></div>
 
+        </div>
 
-        </form>
+      </div>
 
 
-      </section>
+      <!-- MESSAGE ROW -->
+
+      <div class="row message-row">
+
+        <textarea
+          id="msg"
+          rows="1"
+          placeholder="Type a message… (press Enter to send)"
+          maxlength="2000"
+          autocomplete="off"
+        ></textarea>
+
+
+        <!-- EMOJI -->
+
+        <button
+          type="button"
+          id="emojiBtn"
+          title="Emoji"
+          aria-label="Emoji"
+        >
+          😊
+        </button>
+
+
+        <!-- GIF -->
+
+        <button
+          type="button"
+          id="gifBtn"
+          class="gif-btn"
+          title="GIF"
+          aria-label="GIF"
+        >
+          GIF
+        </button>
+
+
+        <!-- VOICE -->
+
+        <button
+          type="button"
+          id="voiceBtn"
+          title="Voice message"
+          aria-label="Voice message"
+        >
+          🎤
+        </button>
+
+
+        <!-- FILE -->
+
+        <label
+          class="fileLabel"
+          title="Send a file"
+          aria-label="Attach file"
+        >
+
+          📎
+
+          <input
+            id="fileInput"
+            type="file"
+            accept="image/*,audio/*,.pdf,.doc,.docx,.txt"
+            hidden
+          >
+
+        </label>
+
+
+        <!-- SEND -->
+
+        <button
+          id="sendBtn"
+          class="send"
+          type="submit"
+        >
+          Send
+        </button>
+
+      </div>
+
+
+      <!-- FILE QUEUE -->
+
+      <div
+        id="fileQueue"
+        class="file-queue"
+        aria-live="polite"
+      ></div>
 
 
       <!-- ======================================
-           YOUTUBE MUSIC ROOM
+           YOUTUBE SEARCH
       ======================================= -->
 
-      <aside
-        class="music-panel"
-        id="musicPanel"
-      >
+      <div class="youtube-search-box">
 
-
-        <!-- MUSIC HEADER -->
-
-        <div class="music-header">
-
-
-          <div>
-
-            <div class="music-title">
-              🎵 Music Room
-            </div>
-
-            <div class="music-subtitle">
-              Everyone listens together
-            </div>
-
-          </div>
-
-
-          <span
-            class="music-live"
-            id="musicLiveStatus"
-          >
-            ● LIVE
-          </span>
-
-
-        </div>
-
-
-        <!-- ====================================
-             YOUTUBE SEARCH
-        ===================================== -->
-
-        <div class="youtube-search">
-
+        <div class="youtube-search-row">
 
           <input
             id="youtubeSearch"
             type="text"
-            placeholder="Search YouTube music..."
+            placeholder="🎵 Search YouTube songs..."
             maxlength="100"
             autocomplete="off"
-            aria-label="Search YouTube music"
           >
-
 
           <button
             type="button"
             id="youtubeSearchBtn"
-            title="Search YouTube"
           >
-            🔍
+            Search
           </button>
-
 
         </div>
 
-
-        <!-- ====================================
-             SEARCH RESULTS
-        ===================================== -->
 
         <div
           id="youtubeResults"
           class="youtube-results"
-          aria-live="polite"
-        >
+        ></div>
 
-          <div class="youtube-empty">
-
-            🎵 Search for a song to play
-
-          </div>
-
-        </div>
+      </div>
 
 
-        <!-- ====================================
-             CURRENT SONG
-        ===================================== -->
-
-        <div
-          class="current-song"
-          id="currentSong"
-        >
-
-
-          <div class="current-song-label">
-            NOW PLAYING
-          </div>
-
-
-          <div
-            class="current-song-title"
-            id="currentSongTitle"
-          >
-            Nothing playing
-          </div>
-
-
-        </div>
-
-
-        <!-- ====================================
-             YOUTUBE PLAYER
-        ===================================== -->
-
-        <div
-          class="youtube-player-wrapper"
-          id="youtubePlayerWrapper"
-        >
-
-          <div
-            id="youtubePlayer"
-            class="youtube-player"
-          ></div>
-
-        </div>
-
-
-        <!-- ====================================
-             MUSIC CONTROLS
-        ===================================== -->
-
-        <div class="music-controls">
-
-
-          <button
-            type="button"
-            id="musicPlayBtn"
-            title="Play"
-            aria-label="Play"
-          >
-            ▶️
-          </button>
-
-
-          <button
-            type="button"
-            id="musicPauseBtn"
-            title="Pause"
-            aria-label="Pause"
-          >
-            ⏸️
-          </button>
-
-
-          <button
-            type="button"
-            id="musicBackBtn"
-            title="Back 10 seconds"
-            aria-label="Back 10 seconds"
-          >
-            ↩️
-          </button>
-
-
-          <button
-            type="button"
-            id="musicForwardBtn"
-            title="Forward 10 seconds"
-            aria-label="Forward 10 seconds"
-          >
-            ↪️
-          </button>
-
-
-        </div>
-
-
-        <!-- ====================================
-             MUSIC INFO
-        ===================================== -->
-
-        <div class="music-info">
-
-
-          <span>
-            🎧
-          </span>
-
-
-          <span>
-            When someone controls the music,
-            everyone gets the same playback.
-          </span>
-
-
-        </div>
-
-
-      </aside>
-
-
-    </div>
+    </form>
 
 
     <!-- ========================================
@@ -564,6 +676,57 @@
 
 
   <!-- ==========================================
+       YOUTUBE PLAYER
+  =========================================== -->
+
+  <aside
+    id="youtubePlayerPanel"
+    class="youtube-panel"
+  >
+
+    <div class="youtube-header">
+
+      <div class="youtube-header-title">
+        🎵 Shared Music
+      </div>
+
+      <button
+        type="button"
+        id="youtubeCloseBtn"
+        class="youtube-close"
+        title="Stop music"
+        aria-label="Stop music"
+      >
+        ✕
+      </button>
+
+    </div>
+
+
+    <div
+      id="youtubePlayer"
+    ></div>
+
+
+    <div
+      id="youtubePlayerTitle"
+      class="youtube-title"
+    >
+      No song selected
+    </div>
+
+
+    <div
+      id="youtubeStatus"
+      class="youtube-status"
+    >
+      Ready
+    </div>
+
+  </aside>
+
+
+  <!-- ==========================================
        SOCKET.IO
   =========================================== -->
 
@@ -573,16 +736,7 @@
 
 
   <!-- ==========================================
-       YOUTUBE IFRAME API
-  =========================================== -->
-
-  <script
-    src="https://www.youtube.com/iframe_api"
-  ></script>
-
-
-  <!-- ==========================================
-       CLIENT JAVASCRIPT
+       CLIENT JS
   =========================================== -->
 
   <script
