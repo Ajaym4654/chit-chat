@@ -1,7 +1,7 @@
 {
   "name": "anon-fun-chat",
   "version": "1.0.0",
-  "description": "A simple anonymous group chat with file sharing and no persistence.",
+  "description": "A simple anonymous group chat with file sharing, GIFs, voice messages and no persistence.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
