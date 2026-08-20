@@ -2,37 +2,45 @@
   box-sizing: border-box;
 }
 
-/* =========================
+/* =========================================================
    THEME
-========================= */
+========================================================= */
 
 :root {
   --bg: #f8fafc;
   --panel: rgba(255, 255, 255, 0.72);
+  --panel-strong: rgba(255, 255, 255, 0.88);
+
   --text: #1f2937;
+  --text-dark: #0f172a;
   --muted: #64748b;
+  --muted-light: #94a3b8;
 
   --accent: #06b6d4;
   --accent2: #8b5cf6;
+  --pink: #ec4899;
+  --orange: #f97316;
+  --green: #22c55e;
+  --red: #ef4444;
 
-  --input: rgba(255, 255, 255, 0.88);
+  --input: rgba(255, 255, 255, 0.9);
 
-  --success: #22c55e;
-  --danger: #ef4444;
+  --border: rgba(255, 255, 255, 0.85);
+  --border-dark: rgba(148, 163, 184, 0.25);
 
-  --border: rgba(255, 255, 255, 0.8);
   --shadow: rgba(15, 23, 42, 0.08);
 }
 
-
-/* =========================
-   BODY
-========================= */
+/* =========================================================
+   HTML / BODY
+========================================================= */
 
 html,
 body {
   height: 100%;
   margin: 0;
+  padding: 0;
+
   font-family:
     system-ui,
     -apple-system,
@@ -45,42 +53,49 @@ body {
     "Apple Color Emoji",
     "Segoe UI Emoji";
 
+  color: var(--text);
+
   background:
     linear-gradient(
       135deg,
       #fff7ed 0%,
-      #f8fafc 30%,
-      #f5f3ff 65%,
+      #f8fafc 28%,
+      #f5f3ff 62%,
       #ecfeff 100%
     );
 
-  color: var(--text);
   overflow: hidden;
 }
 
-
-/* =========================
-   ANIMATED BACKGROUND
-========================= */
+/* =========================================================
+   BACKGROUND COLORFUL CIRCLES
+========================================================= */
 
 .background-shapes {
   position: fixed;
   inset: 0;
+
   overflow: hidden;
+
   pointer-events: none;
+
   z-index: 0;
 }
-
 
 /* Base circle */
 
 .circle {
   position: absolute;
+
   display: block;
+
   border-radius: 50%;
-  filter: blur(1px);
-  opacity: 0.20;
+
   pointer-events: none;
+
+  opacity: 0.17;
+
+  filter: blur(2px);
 
   animation:
     floatCircle
@@ -90,101 +105,94 @@ body {
     alternate;
 }
 
-
 /* Pink */
 
 .circle-1 {
-  width: 300px;
-  height: 300px;
+  width: 320px;
+  height: 320px;
 
   background: #fb7185;
 
-  top: -100px;
-  left: -70px;
+  top: -120px;
+  left: -80px;
 
   animation-duration: 22s;
 }
 
-
 /* Purple */
 
 .circle-2 {
-  width: 380px;
-  height: 380px;
+  width: 390px;
+  height: 390px;
 
   background: #8b5cf6;
 
-  right: -130px;
-  top: 5%;
+  right: -150px;
+  top: 4%;
 
-  animation-duration: 26s;
+  animation-duration: 27s;
   animation-delay: -5s;
 }
-
 
 /* Cyan */
 
 .circle-3 {
-  width: 240px;
-  height: 240px;
+  width: 260px;
+  height: 260px;
 
   background: #22d3ee;
 
-  left: 18%;
-  bottom: -90px;
+  left: 17%;
+  bottom: -100px;
 
-  animation-duration: 20s;
+  animation-duration: 21s;
   animation-delay: -8s;
 }
-
 
 /* Yellow */
 
 .circle-4 {
-  width: 190px;
-  height: 190px;
+  width: 200px;
+  height: 200px;
 
   background: #facc15;
 
   right: 25%;
-  top: 18%;
+  top: 17%;
 
-  animation-duration: 24s;
+  animation-duration: 25s;
   animation-delay: -3s;
 }
-
 
 /* Green */
 
 .circle-5 {
-  width: 270px;
-  height: 270px;
+  width: 280px;
+  height: 280px;
 
   background: #34d399;
 
-  left: -100px;
-  bottom: 8%;
+  left: -110px;
+  bottom: 7%;
 
-  animation-duration: 28s;
+  animation-duration: 29s;
   animation-delay: -10s;
 }
-
 
 /* Orange */
 
 .circle-6 {
-  width: 210px;
-  height: 210px;
+  width: 220px;
+  height: 220px;
 
   background: #fb923c;
 
   right: 7%;
-  bottom: -80px;
+  bottom: -90px;
 
-  animation-duration: 23s;
+  animation-duration: 24s;
   animation-delay: -6s;
 }
-
 
 /* Floating animation */
 
@@ -198,44 +206,46 @@ body {
 
   25% {
     transform:
-      translate3d(60px, -40px, 0)
+      translate3d(65px, -45px, 0)
       scale(1.05);
   }
 
   50% {
     transform:
-      translate3d(-30px, 70px, 0)
+      translate3d(-35px, 75px, 0)
       scale(0.95);
   }
 
   75% {
     transform:
-      translate3d(80px, 30px, 0)
+      translate3d(85px, 35px, 0)
       scale(1.08);
   }
 
   100% {
     transform:
-      translate3d(-50px, -60px, 0)
+      translate3d(-55px, -65px, 0)
       scale(1);
   }
 }
 
-
-/* =========================
+/* =========================================================
    MAIN APP
-========================= */
+========================================================= */
 
 .app {
   position: relative;
+
   z-index: 1;
 
   max-width: 1000px;
+
   margin: 0 auto;
 
   height: 100vh;
 
   display: grid;
+
   grid-template-rows:
     auto
     1fr
@@ -247,21 +257,21 @@ body {
   padding: 16px;
 }
 
-
-/* =========================
+/* =========================================================
    HEADER
-========================= */
+========================================================= */
 
 header {
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
 
   flex-wrap: wrap;
 
   gap: 10px;
 }
-
 
 .title {
   font-size: clamp(19px, 2vw, 23px);
@@ -273,9 +283,11 @@ header {
   color: #1e293b;
 }
 
+/* Right side */
 
 .header-right {
   display: flex;
+
   align-items: center;
 
   justify-content: flex-end;
@@ -285,10 +297,9 @@ header {
   flex-wrap: wrap;
 }
 
-
-/* =========================
+/* =========================================================
    LIVE STATUS
-========================= */
+========================================================= */
 
 .meta {
   color: var(--muted);
@@ -302,12 +313,11 @@ header {
   gap: 7px;
 }
 
-
 .live-dot {
   width: 8px;
   height: 8px;
 
-  background: var(--success);
+  background: var(--green);
 
   border-radius: 50%;
 
@@ -319,7 +329,6 @@ header {
 
   animation: livePulse 1.8s infinite;
 }
-
 
 @keyframes livePulse {
 
@@ -342,10 +351,9 @@ header {
   }
 }
 
-
-/* =========================
+/* =========================================================
    USER COUNTER
-========================= */
+========================================================= */
 
 .user-stats {
   display: flex;
@@ -374,8 +382,13 @@ header {
     rgba(15, 23, 42, 0.06);
 
   backdrop-filter: blur(12px);
+
+  -webkit-backdrop-filter: blur(12px);
 }
 
+.user-stats span {
+  white-space: nowrap;
+}
 
 .user-stats strong {
   color: #7c3aed;
@@ -383,10 +396,9 @@ header {
   font-size: 14px;
 }
 
-
-/* =========================
+/* =========================================================
    CHAT AREA
-========================= */
+========================================================= */
 
 #chatArea {
   overflow-y: auto;
@@ -419,7 +431,6 @@ header {
   -webkit-backdrop-filter: blur(16px);
 }
 
-
 /* Scrollbar */
 
 #chatArea::-webkit-scrollbar {
@@ -431,15 +442,20 @@ header {
 }
 
 #chatArea::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.25);
+  background:
+    rgba(100, 116, 139, 0.25);
 
   border-radius: 20px;
 }
 
+#chatArea::-webkit-scrollbar-thumb:hover {
+  background:
+    rgba(100, 116, 139, 0.4);
+}
 
-/* =========================
+/* =========================================================
    MESSAGE
-========================= */
+========================================================= */
 
 .msg {
   display: flex;
@@ -467,6 +483,8 @@ header {
 
   word-wrap: break-word;
 
+  overflow-wrap: anywhere;
+
   white-space: pre-wrap;
 
   font-size:
@@ -476,9 +494,11 @@ header {
     0 4px 15px
     rgba(15, 23, 42, 0.05);
 
-  animation: messageIn 0.2s ease;
+  animation:
+    messageIn
+    0.2s
+    ease;
 }
-
 
 @keyframes messageIn {
 
@@ -497,6 +517,19 @@ header {
   }
 }
 
+/* Message header */
+
+.msg .head {
+  display: flex;
+
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 3px;
+}
+
+/* Name */
 
 .msg .name {
   color: #0891b2;
@@ -504,6 +537,7 @@ header {
   font-weight: 700;
 }
 
+/* Time */
 
 .msg .time {
   color: #94a3b8;
@@ -514,14 +548,18 @@ header {
   margin-left: 4px;
 }
 
+/* Message body */
 
 .msg .body {
   font-size:
     clamp(14px, 1.8vw, 16px);
 
   color: #334155;
+
+  width: 100%;
 }
 
+/* Links */
 
 .msg a {
   color: #7c3aed;
@@ -531,15 +569,13 @@ header {
   text-decoration: none;
 }
 
-
 .msg a:hover {
   text-decoration: underline;
 }
 
-
-/* =========================
+/* =========================================================
    SYSTEM MESSAGE
-========================= */
+========================================================= */
 
 .system {
   color: #64748b;
@@ -554,10 +590,286 @@ header {
   text-align: center;
 }
 
+/* =========================================================
+   IMAGE PREVIEW
+========================================================= */
 
-/* =========================
+.chat-image {
+  display: block;
+
+  max-width: min(360px, 100%);
+
+  max-height: 320px;
+
+  width: auto;
+
+  height: auto;
+
+  object-fit: contain;
+
+  border-radius: 12px;
+
+  margin-top: 7px;
+
+  border:
+    1px solid
+    rgba(148, 163, 184, 0.2);
+
+  cursor: pointer;
+
+  box-shadow:
+    0 6px 20px
+    rgba(15, 23, 42, 0.08);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.chat-image:hover {
+  transform: scale(1.015);
+
+  box-shadow:
+    0 10px 28px
+    rgba(15, 23, 42, 0.14);
+}
+
+.image-download {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  margin-top: 7px;
+
+  font-size: 13px;
+
+  color: #7c3aed;
+}
+
+/* =========================================================
+   FILE MESSAGE
+========================================================= */
+
+.file-card {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 10px;
+
+  margin-top: 5px;
+
+  background:
+    rgba(248, 250, 252, 0.8);
+
+  border:
+    1px solid
+    rgba(148, 163, 184, 0.18);
+
+  border-radius: 12px;
+
+  width: 100%;
+
+  max-width: 420px;
+}
+
+.file-icon {
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #06b6d4,
+      #8b5cf6
+    );
+
+  color: white;
+
+  font-size: 20px;
+}
+
+.file-info {
+  min-width: 0;
+
+  flex: 1;
+}
+
+.file-name {
+  font-weight: 700;
+
+  color: #334155;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.file-size {
+  color: #94a3b8;
+
+  font-size: 12px;
+
+  margin-top: 2px;
+}
+
+.file-download {
+  flex-shrink: 0;
+
+  padding: 7px 10px;
+
+  border-radius: 9px;
+
+  background:
+    rgba(124, 58, 237, 0.1);
+
+  color: #7c3aed !important;
+
+  font-size: 12px;
+
+  text-decoration: none !important;
+}
+
+.file-download:hover {
+  background:
+    rgba(124, 58, 237, 0.16);
+}
+
+/* =========================================================
+   VOICE MESSAGE
+========================================================= */
+
+.voice-message {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  width: 100%;
+
+  max-width: 420px;
+
+  padding: 9px;
+
+  margin-top: 5px;
+
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(6, 182, 212, 0.08),
+      rgba(139, 92, 246, 0.08)
+    );
+
+  border:
+    1px solid
+    rgba(139, 92, 246, 0.12);
+}
+
+.voice-play {
+  width: 42px;
+  height: 42px;
+
+  padding: 0;
+
+  border-radius: 50%;
+
+  flex-shrink: 0;
+}
+
+.voice-message audio {
+  width: 100%;
+
+  height: 38px;
+}
+
+/* =========================================================
+   VOICE RECORDING UI
+========================================================= */
+
+.voice-recording {
+  display: none;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+
+  padding: 8px 12px;
+
+  border-radius: 12px;
+
+  background:
+    rgba(239, 68, 68, 0.08);
+
+  color: #dc2626;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+.voice-recording.active {
+  display: flex;
+}
+
+.recording-dot {
+  width: 9px;
+  height: 9px;
+
+  border-radius: 50%;
+
+  background: #ef4444;
+
+  animation:
+    recordingPulse
+    1s
+    infinite;
+}
+
+@keyframes recordingPulse {
+
+  0% {
+    opacity: 1;
+
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+
+    transform: scale(1.4);
+  }
+
+  100% {
+    opacity: 1;
+
+    transform: scale(1);
+  }
+}
+
+/* =========================================================
    CONTROLS
-========================= */
+========================================================= */
 
 #controls {
   display: grid;
@@ -584,7 +896,6 @@ header {
   -webkit-backdrop-filter: blur(16px);
 }
 
-
 .row {
   display: flex;
 
@@ -595,10 +906,9 @@ header {
   flex-wrap: wrap;
 }
 
-
-/* =========================
+/* =========================================================
    INPUTS
-========================= */
+========================================================= */
 
 #name,
 #msg {
@@ -628,7 +938,6 @@ header {
     box-shadow 0.2s;
 }
 
-
 #name:focus,
 #msg:focus {
   border-color: #a78bfa;
@@ -638,12 +947,10 @@ header {
     rgba(167, 139, 250, 0.15);
 }
 
-
 #name::placeholder,
 #msg::placeholder {
   color: #94a3b8;
 }
-
 
 #msg {
   resize: none;
@@ -651,10 +958,9 @@ header {
   max-height: 160px;
 }
 
-
-/* =========================
+/* =========================================================
    BUTTONS
-========================= */
+========================================================= */
 
 button,
 .fileLabel {
@@ -695,7 +1001,6 @@ button,
     rgba(124, 58, 237, 0.18);
 }
 
-
 button:hover,
 .fileLabel:hover {
   transform: translateY(-1px);
@@ -705,34 +1010,95 @@ button:hover,
     rgba(124, 58, 237, 0.25);
 }
 
-
 button:active,
 .fileLabel:active {
   transform: translateY(1px);
 }
 
+button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+
+  transform: none;
+
+  box-shadow: none;
+}
 
 button.send {
   min-width: 92px;
 }
 
+/* =========================================================
+   EXTRA ACTION BUTTONS
+========================================================= */
 
-/* =========================
+#emojiBtn,
+#gifBtn,
+#voiceBtn {
+  width: 44px;
+
+  min-width: 44px;
+
+  height: 42px;
+
+  padding: 0;
+
+  font-size: 18px;
+}
+
+#voiceBtn.recording {
+  background:
+    linear-gradient(
+      135deg,
+      #ef4444,
+      #ec4899
+    );
+
+  animation:
+    recordingButtonPulse
+    1.2s
+    infinite;
+}
+
+@keyframes recordingButtonPulse {
+
+  0% {
+    box-shadow:
+      0 0 0 0
+      rgba(239, 68, 68, 0.35);
+  }
+
+  70% {
+    box-shadow:
+      0 0 0 8px
+      rgba(239, 68, 68, 0);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 0
+      rgba(239, 68, 68, 0);
+  }
+}
+
+/* =========================================================
    FILE BUTTON
-========================= */
+========================================================= */
 
 .fileLabel {
   min-width: 44px;
+
+  height: 42px;
 
   padding-left: 12px;
 
   padding-right: 12px;
 }
 
-
-/* =========================
+/* =========================================================
    FILE QUEUE
-========================= */
+========================================================= */
 
 #fileQueue {
   display: flex;
@@ -742,8 +1108,11 @@ button.send {
   gap: 8px;
 }
 
-
 .file-chip {
+  display: inline-flex;
+
+  align-items: center;
+
   background:
     rgba(241, 245, 249, 0.9);
 
@@ -758,8 +1127,9 @@ button.send {
   border-radius: 999px;
 
   font-size: 12px;
-}
 
+  max-width: 100%;
+}
 
 .file-chip .x {
   margin-left: 6px;
@@ -771,15 +1141,13 @@ button.send {
   color: #ef4444;
 }
 
-
 .file-chip .x:hover {
   opacity: 1;
 }
 
-
-/* =========================
+/* =========================================================
    EMOJI PICKER
-========================= */
+========================================================= */
 
 .emoji-picker {
   display: none;
@@ -813,14 +1181,14 @@ button.send {
 
   backdrop-filter: blur(12px);
 
+  -webkit-backdrop-filter: blur(12px);
+
   width: 100%;
 }
-
 
 .emoji-picker.open {
   display: grid;
 }
-
 
 .emoji-picker button {
   background: transparent;
@@ -840,7 +1208,6 @@ button.send {
   font-size: 18px;
 }
 
-
 .emoji-picker button:hover {
   background: #f1f5f9;
 
@@ -849,10 +1216,196 @@ button.send {
   box-shadow: none;
 }
 
+/* =========================================================
+   GIF PICKER
+========================================================= */
 
-/* =========================
+.gif-picker {
+  display: none;
+
+  width: 100%;
+
+  max-height: 260px;
+
+  overflow-y: auto;
+
+  padding: 10px;
+
+  background:
+    rgba(255, 255, 255, 0.94);
+
+  border:
+    1px solid
+    #e2e8f0;
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 15px 35px
+    rgba(15, 23, 42, 0.12);
+
+  backdrop-filter: blur(12px);
+
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.gif-picker.open {
+  display: block;
+}
+
+.gif-search {
+  width: 100%;
+
+  padding: 9px 11px;
+
+  margin-bottom: 9px;
+
+  border:
+    1px solid
+    #e2e8f0;
+
+  border-radius: 10px;
+
+  outline: none;
+
+  font-size: 14px;
+
+  background: white;
+}
+
+.gif-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(110px, 1fr)
+    );
+
+  gap: 8px;
+}
+
+.gif-item {
+  border-radius: 10px;
+
+  overflow: hidden;
+
+  cursor: pointer;
+
+  background: #f1f5f9;
+
+  border:
+    1px solid
+    #e2e8f0;
+
+  transition:
+    transform 0.15s ease;
+}
+
+.gif-item:hover {
+  transform: scale(1.03);
+}
+
+.gif-item img {
+  width: 100%;
+
+  height: 90px;
+
+  object-fit: cover;
+
+  display: block;
+}
+
+/* =========================================================
+   CHAT GIF
+========================================================= */
+
+.chat-gif {
+  display: block;
+
+  width: auto;
+
+  max-width: min(360px, 100%);
+
+  max-height: 300px;
+
+  border-radius: 12px;
+
+  margin-top: 6px;
+}
+
+/* =========================================================
+   NOTIFICATION INDICATOR
+========================================================= */
+
+.notification-badge {
+  position: fixed;
+
+  right: 18px;
+
+  bottom: 18px;
+
+  z-index: 100;
+
+  display: none;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 9px 13px;
+
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #06b6d4,
+      #8b5cf6
+    );
+
+  color: white;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  box-shadow:
+    0 10px 25px
+    rgba(124, 58, 237, 0.25);
+
+  animation:
+    notificationPop
+    0.25s
+    ease;
+}
+
+.notification-badge.show {
+  display: flex;
+}
+
+@keyframes notificationPop {
+
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(10px)
+      scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+/* =========================================================
    FOOTER
-========================= */
+========================================================= */
 
 footer {
   color: #64748b;
@@ -865,10 +1418,9 @@ footer {
   padding-bottom: 8px;
 }
 
-
-/* =========================
+/* =========================================================
    MOBILE
-========================= */
+========================================================= */
 
 @media (max-width: 640px) {
 
@@ -883,11 +1435,9 @@ footer {
     gap: 9px;
   }
 
-
   header {
     align-items: flex-start;
   }
-
 
   .header-right {
     width: 100%;
@@ -897,11 +1447,13 @@ footer {
     gap: 8px;
   }
 
-
   .title {
     font-size: 19px;
   }
 
+  .meta {
+    font-size: 11px;
+  }
 
   .user-stats {
     font-size: 11px;
@@ -911,11 +1463,9 @@ footer {
     gap: 7px;
   }
 
-
   .user-stats strong {
     font-size: 13px;
   }
-
 
   #chatArea {
     padding: 10px;
@@ -923,13 +1473,28 @@ footer {
     border-radius: 15px;
   }
 
-
   .msg {
     max-width: 100%;
 
     padding: 9px 11px;
   }
 
+  .chat-image {
+    max-width: 100%;
+
+    max-height: 260px;
+  }
+
+  .chat-gif {
+    max-width: 100%;
+
+    max-height: 260px;
+  }
+
+  .file-card,
+  .voice-message {
+    max-width: 100%;
+  }
 
   #controls {
     padding: 9px;
@@ -937,13 +1502,11 @@ footer {
     border-radius: 15px;
   }
 
-
   .row {
     flex-direction: column;
 
     align-items: stretch;
   }
-
 
   #name,
   #msg {
@@ -952,6 +1515,11 @@ footer {
     flex: none;
   }
 
+  /*
+     Message row:
+     textarea full width
+     buttons underneath
+  */
 
   .row:last-of-type {
     display: grid;
@@ -959,14 +1527,32 @@ footer {
     grid-template-columns:
       1fr
       44px
+      44px
+      44px
       44px;
   }
-
 
   .row:last-of-type #msg {
     grid-column: 1 / -1;
   }
 
+  .row:last-of-type #emojiBtn {
+    grid-column: 2;
+  }
+
+  .row:last-of-type #gifBtn {
+    grid-column: 3;
+  }
+
+  .row:last-of-type #voiceBtn {
+    grid-column: 4;
+  }
+
+  .row:last-of-type .fileLabel {
+    grid-column: 5;
+
+    width: 44px;
+  }
 
   .row:last-of-type button.send {
     grid-column: 1 / -1;
@@ -974,11 +1560,9 @@ footer {
     width: 100%;
   }
 
-
   .fileLabel {
     width: 100%;
   }
-
 
   .emoji-picker {
     position: relative;
@@ -986,6 +1570,31 @@ footer {
     z-index: 10;
   }
 
+  .gif-picker {
+    position: relative;
+
+    z-index: 20;
+  }
+
+  .gif-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        1fr
+      );
+  }
+
+  .gif-item img {
+    height: 100px;
+  }
+
+  .notification-badge {
+    right: 10px;
+
+    bottom: 10px;
+
+    font-size: 12px;
+  }
 
   footer {
     padding-bottom: 4px;
@@ -993,38 +1602,32 @@ footer {
     font-size: 11px;
   }
 
-
-  /* Smaller background circles */
+  /* Smaller circles */
 
   .circle-1 {
     width: 180px;
     height: 180px;
   }
 
-
   .circle-2 {
     width: 220px;
     height: 220px;
   }
-
 
   .circle-3 {
     width: 160px;
     height: 160px;
   }
 
-
   .circle-4 {
     width: 130px;
     height: 130px;
   }
 
-
   .circle-5 {
     width: 180px;
     height: 180px;
   }
-
 
   .circle-6 {
     width: 150px;
@@ -1032,10 +1635,9 @@ footer {
   }
 }
 
-
-/* =========================
+/* =========================================================
    VERY SMALL SCREENS
-========================= */
+========================================================= */
 
 @media (max-width: 400px) {
 
@@ -1043,13 +1645,11 @@ footer {
     padding: 7px;
   }
 
-
   .header-right {
     align-items: flex-start;
 
     flex-direction: column;
   }
-
 
   .user-stats {
     width: 100%;
@@ -1057,18 +1657,86 @@ footer {
     justify-content: center;
   }
 
-
   .meta {
     width: 100%;
 
     justify-content: center;
   }
+
+  .title {
+    font-size: 18px;
+  }
+
+  #chatArea {
+    padding: 8px;
+  }
+
+  .msg {
+    padding: 8px 10px;
+  }
+
+  .gif-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        1fr
+      );
+  }
 }
 
+/* =========================================================
+   LANDSCAPE MOBILE
+========================================================= */
 
-/* =========================
+@media (max-height: 500px) and (orientation: landscape) {
+
+  .app {
+    padding: 8px;
+
+    gap: 7px;
+  }
+
+  header {
+    min-height: 35px;
+  }
+
+  .title {
+    font-size: 17px;
+  }
+
+  #chatArea {
+    min-height: 0;
+  }
+
+  #controls {
+    gap: 6px;
+
+    padding: 7px;
+  }
+
+  footer {
+    display: none;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+button:focus-visible,
+.fileLabel:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline:
+    3px solid
+    rgba(139, 92, 246, 0.25);
+
+  outline-offset: 2px;
+}
+
+/* =========================================================
    REDUCE MOTION
-========================= */
+========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
 
@@ -1081,6 +1749,18 @@ footer {
   }
 
   .msg {
+    animation: none;
+  }
+
+  .notification-badge {
+    animation: none;
+  }
+
+  #voiceBtn.recording {
+    animation: none;
+  }
+
+  .recording-dot {
     animation: none;
   }
 }
