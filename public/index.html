@@ -17,7 +17,7 @@
 
   <meta
     name="description"
-    content="Anon Fun Chat - Anonymous group chat with GIFs, emojis, voice messages and file sharing."
+    content="Anon Fun Chat - Anonymous group chat with GIFs, emojis, voice messages, music and file sharing."
   >
 
   <title>Anon Fun Chat</title>
@@ -128,210 +128,420 @@
 
 
     <!-- ========================================
-         CHAT AREA
+         MAIN CONTENT
     ========================================= -->
 
-    <main
-      id="chatArea"
-      aria-live="polite"
-      aria-label="Group chat messages"
-    ></main>
-
-
-    <!-- ========================================
-         CONTROLS
-    ========================================= -->
-
-    <form
-      id="controls"
-      autocomplete="off"
-    >
+    <div class="main-layout">
 
 
       <!-- ======================================
-           NAME ROW
+           CHAT SECTION
       ======================================= -->
 
-      <div class="row name-row">
+      <section class="chat-section">
 
 
-        <input
-          id="name"
-          type="text"
-          placeholder="Name (optional)"
-          maxlength="20"
+        <!-- CHAT AREA -->
+
+        <main
+          id="chatArea"
+          aria-live="polite"
+          aria-label="Group chat messages"
+        ></main>
+
+
+        <!-- ====================================
+             CONTROLS
+        ===================================== -->
+
+        <form
+          id="controls"
           autocomplete="off"
         >
 
 
-        <!-- ====================================
-             EMOJI PICKER
-        ===================================== -->
+          <!-- ==================================
+               NAME ROW
+          =================================== -->
 
-        <div
-          class="emoji-picker"
-          id="emojiPicker"
-          aria-hidden="true"
-        ></div>
-
-
-        <!-- ====================================
-             GIF PICKER
-        ===================================== -->
-
-        <div
-          id="gifPicker"
-          class="gif-picker"
-        >
-
-
-          <div class="gif-search">
+          <div class="row name-row">
 
 
             <input
-              id="gifSearch"
+              id="name"
               type="text"
-              placeholder="Search GIFs..."
+              placeholder="Name (optional)"
+              maxlength="20"
               autocomplete="off"
-              maxlength="100"
-              aria-label="Search GIFs"
             >
 
+
+            <!-- ================================
+                 EMOJI PICKER
+            ================================= -->
+
+            <div
+              class="emoji-picker"
+              id="emojiPicker"
+              aria-hidden="true"
+            ></div>
+
+
+            <!-- ================================
+                 GIF PICKER
+            ================================= -->
+
+            <div
+              id="gifPicker"
+              class="gif-picker"
+            >
+
+
+              <div class="gif-search">
+
+
+                <input
+                  id="gifSearch"
+                  type="text"
+                  placeholder="Search GIFs..."
+                  autocomplete="off"
+                  maxlength="100"
+                  aria-label="Search GIFs"
+                >
+
+
+                <button
+                  type="button"
+                  id="gifSearchBtn"
+                  title="Search GIFs"
+                >
+                  Search
+                </button>
+
+
+              </div>
+
+
+              <div
+                id="gifResults"
+                class="gif-results"
+                aria-live="polite"
+              ></div>
+
+
+            </div>
+
+
+          </div>
+
+
+          <!-- ==================================
+               MESSAGE ROW
+          =================================== -->
+
+          <div class="row message-row">
+
+
+            <textarea
+              id="msg"
+              rows="1"
+              placeholder="Type a message… (press Enter to send)"
+              maxlength="2000"
+              autocomplete="off"
+            ></textarea>
+
+
+            <!-- EMOJI -->
 
             <button
               type="button"
-              id="gifSearchBtn"
-              title="Search GIFs"
+              id="emojiBtn"
+              title="Emoji"
+              aria-label="Emoji"
             >
-              Search
+              😊
+            </button>
+
+
+            <!-- GIF -->
+
+            <button
+              type="button"
+              id="gifBtn"
+              class="gif-btn"
+              title="GIF"
+              aria-label="GIF"
+            >
+              GIF
+            </button>
+
+
+            <!-- VOICE -->
+
+            <button
+              type="button"
+              id="voiceBtn"
+              title="Voice message"
+              aria-label="Voice message"
+            >
+              🎤
+            </button>
+
+
+            <!-- FILE -->
+
+            <label
+              class="fileLabel"
+              title="Send a file"
+              aria-label="Attach file"
+            >
+
+              📎
+
+              <input
+                id="fileInput"
+                type="file"
+                accept="image/*,audio/*,.pdf,.doc,.docx,.txt"
+                hidden
+              >
+
+            </label>
+
+
+            <!-- SEND -->
+
+            <button
+              id="sendBtn"
+              class="send"
+              type="submit"
+            >
+              Send
             </button>
 
 
           </div>
 
 
+          <!-- FILE QUEUE -->
+
           <div
-            id="gifResults"
-            class="gif-results"
+            id="fileQueue"
+            class="file-queue"
             aria-live="polite"
           ></div>
+
+
+        </form>
+
+
+      </section>
+
+
+      <!-- ======================================
+           YOUTUBE MUSIC ROOM
+      ======================================= -->
+
+      <aside
+        class="music-panel"
+        id="musicPanel"
+      >
+
+
+        <!-- MUSIC HEADER -->
+
+        <div class="music-header">
+
+
+          <div>
+
+            <div class="music-title">
+              🎵 Music Room
+            </div>
+
+            <div class="music-subtitle">
+              Everyone listens together
+            </div>
+
+          </div>
+
+
+          <span
+            class="music-live"
+            id="musicLiveStatus"
+          >
+            ● LIVE
+          </span>
 
 
         </div>
 
 
-      </div>
-
-
-      <!-- ======================================
-           MESSAGE ROW
-      ======================================= -->
-
-      <div class="row message-row">
-
-
-        <textarea
-          id="msg"
-          rows="1"
-          placeholder="Type a message… (press Enter to send)"
-          maxlength="2000"
-          autocomplete="off"
-        ></textarea>
-
-
         <!-- ====================================
-             EMOJI BUTTON
+             YOUTUBE SEARCH
         ===================================== -->
 
-        <button
-          type="button"
-          id="emojiBtn"
-          title="Emoji"
-          aria-label="Emoji"
-        >
-          😊
-        </button>
+        <div class="youtube-search">
 
-
-        <!-- ====================================
-             GIF BUTTON
-        ===================================== -->
-
-        <button
-          type="button"
-          id="gifBtn"
-          class="gif-btn"
-          title="GIF"
-          aria-label="GIF"
-        >
-          GIF
-        </button>
-
-
-        <!-- ====================================
-             VOICE BUTTON
-        ===================================== -->
-
-        <button
-          type="button"
-          id="voiceBtn"
-          title="Voice message"
-          aria-label="Voice message"
-        >
-          🎤
-        </button>
-
-
-        <!-- ====================================
-             FILE BUTTON
-        ===================================== -->
-
-        <label
-          class="fileLabel"
-          title="Send a file"
-          aria-label="Attach file"
-        >
-
-          📎
 
           <input
-            id="fileInput"
-            type="file"
-            accept="image/*,audio/*,.pdf,.doc,.docx,.txt"
-            hidden
+            id="youtubeSearch"
+            type="text"
+            placeholder="Search YouTube music..."
+            maxlength="100"
+            autocomplete="off"
+            aria-label="Search YouTube music"
           >
 
-        </label>
+
+          <button
+            type="button"
+            id="youtubeSearchBtn"
+            title="Search YouTube"
+          >
+            🔍
+          </button>
+
+
+        </div>
 
 
         <!-- ====================================
-             SEND BUTTON
+             SEARCH RESULTS
         ===================================== -->
 
-        <button
-          id="sendBtn"
-          class="send"
-          type="submit"
+        <div
+          id="youtubeResults"
+          class="youtube-results"
+          aria-live="polite"
         >
-          Send
-        </button>
+
+          <div class="youtube-empty">
+
+            🎵 Search for a song to play
+
+          </div>
+
+        </div>
 
 
-      </div>
+        <!-- ====================================
+             CURRENT SONG
+        ===================================== -->
+
+        <div
+          class="current-song"
+          id="currentSong"
+        >
 
 
-      <!-- ======================================
-           FILE QUEUE
-      ======================================= -->
-
-      <div
-        id="fileQueue"
-        class="file-queue"
-        aria-live="polite"
-      ></div>
+          <div class="current-song-label">
+            NOW PLAYING
+          </div>
 
 
-    </form>
+          <div
+            class="current-song-title"
+            id="currentSongTitle"
+          >
+            Nothing playing
+          </div>
+
+
+        </div>
+
+
+        <!-- ====================================
+             YOUTUBE PLAYER
+        ===================================== -->
+
+        <div
+          class="youtube-player-wrapper"
+          id="youtubePlayerWrapper"
+        >
+
+          <div
+            id="youtubePlayer"
+            class="youtube-player"
+          ></div>
+
+        </div>
+
+
+        <!-- ====================================
+             MUSIC CONTROLS
+        ===================================== -->
+
+        <div class="music-controls">
+
+
+          <button
+            type="button"
+            id="musicPlayBtn"
+            title="Play"
+            aria-label="Play"
+          >
+            ▶️
+          </button>
+
+
+          <button
+            type="button"
+            id="musicPauseBtn"
+            title="Pause"
+            aria-label="Pause"
+          >
+            ⏸️
+          </button>
+
+
+          <button
+            type="button"
+            id="musicBackBtn"
+            title="Back 10 seconds"
+            aria-label="Back 10 seconds"
+          >
+            ↩️
+          </button>
+
+
+          <button
+            type="button"
+            id="musicForwardBtn"
+            title="Forward 10 seconds"
+            aria-label="Forward 10 seconds"
+          >
+            ↪️
+          </button>
+
+
+        </div>
+
+
+        <!-- ====================================
+             MUSIC INFO
+        ===================================== -->
+
+        <div class="music-info">
+
+
+          <span>
+            🎧
+          </span>
+
+
+          <span>
+            When someone controls the music,
+            everyone gets the same playback.
+          </span>
+
+
+        </div>
+
+
+      </aside>
+
+
+    </div>
 
 
     <!-- ========================================
@@ -359,6 +569,15 @@
 
   <script
     src="/socket.io/socket.io.js"
+  ></script>
+
+
+  <!-- ==========================================
+       YOUTUBE IFRAME API
+  =========================================== -->
+
+  <script
+    src="https://www.youtube.com/iframe_api"
   ></script>
 
 
