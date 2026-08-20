@@ -1,5 +1,6 @@
 // =====================================================
 // ANONYMOUS FUN CHAT - SERVER.JS
+// Chat + GIF + Files + YouTube Shared Music
 // =====================================================
 
 const express = require('express');
@@ -30,7 +31,6 @@ app.use(express.static('public'));
 
 // =====================================================
 // API KEYS
-// KEYS STAY ON SERVER
 // =====================================================
 
 const GIPHY_API_KEY =
@@ -41,7 +41,7 @@ const YOUTUBE_API_KEY =
 
 
 // =====================================================
-// GIPHY SEARCH ENDPOINT
+// GIPHY SEARCH
 // =====================================================
 
 app.get(
@@ -52,17 +52,12 @@ app.get(
 
       if (!GIPHY_API_KEY) {
 
-        console.error(
-          'GIPHY_API_KEY is not configured on server.'
-        );
-
         return res.status(500).json({
           error:
             'GIPHY_API_KEY is not configured on server'
         });
 
       }
-
 
       const query =
         String(
@@ -71,9 +66,7 @@ app.get(
           .trim()
           .slice(0, 100);
 
-
       const limit = 20;
-
 
       const url =
         'https://api.giphy.com/v1/gifs/search' +
@@ -90,10 +83,8 @@ app.get(
         '&rating=pg-13' +
         '&lang=en';
 
-
       const response =
         await fetch(url);
-
 
       if (!response.ok) {
 
@@ -113,45 +104,38 @@ app.get(
 
       }
 
-
       const data =
         await response.json();
 
-
       const gifs =
         (data.data || [])
-          .map(
-            gif => ({
+          .map(gif => ({
 
-              id:
-                gif.id,
+            id:
+              gif.id,
 
-              title:
-                gif.title || '',
+            title:
+              gif.title || '',
 
-              url:
-                gif.images?.original?.url || '',
+            url:
+              gif.images?.original?.url || '',
 
-              preview:
-                gif.images?.fixed_width?.url ||
-                gif.images?.fixed_width_small?.url ||
-                gif.images?.downsized?.url ||
-                gif.images?.preview_gif?.url ||
-                gif.images?.original?.url ||
-                ''
+            preview:
+              gif.images?.fixed_width?.url ||
+              gif.images?.fixed_width_small?.url ||
+              gif.images?.downsized?.url ||
+              gif.images?.preview_gif?.url ||
+              gif.images?.original?.url ||
+              ''
 
-            })
-          )
+          }))
           .filter(
-            gif =>
-              gif.url
+            gif => gif.url
           );
-
 
       res.json({
         gifs
       });
-
 
     } catch (error) {
 
@@ -172,7 +156,8 @@ app.get(
 
 
 // =====================================================
-// YOUTUBE SEARCH ENDPOINT
+// YOUTUBE SEARCH
+// API KEY STAYS ON SERVER
 // =====================================================
 
 app.get(
@@ -184,7 +169,7 @@ app.get(
       if (!YOUTUBE_API_KEY) {
 
         console.error(
-          'YOUTUBE_API_KEY is not configured on server.'
+          'YOUTUBE_API_KEY is not configured.'
         );
 
         return res.status(500).json({
@@ -194,7 +179,6 @@ app.get(
 
       }
 
-
       const query =
         String(
           req.query.q || ''
@@ -202,22 +186,33 @@ app.get(
           .trim()
           .slice(0, 100);
 
-
       if (!query) {
 
         return res.status(400).json({
           error:
-            'Search query is required'
+            'Please enter a search term'
         });
 
       }
 
+      const limit =
+        Math.min(
+          Math.max(
+            parseInt(
+              req.query.limit || '8',
+              10
+            ),
+            1
+          ),
+          15
+        );
 
       const url =
         'https://www.googleapis.com/youtube/v3/search' +
         '?part=snippet' +
         '&type=video' +
-        '&maxResults=10' +
+        '&maxResults=' +
+        limit +
         '&q=' +
         encodeURIComponent(query) +
         '&key=' +
@@ -225,10 +220,8 @@ app.get(
           YOUTUBE_API_KEY
         );
 
-
       const response =
         await fetch(url);
-
 
       if (!response.ok) {
 
@@ -248,42 +241,46 @@ app.get(
 
       }
 
-
       const data =
         await response.json();
 
-
       const videos =
         (data.items || [])
-          .map(
-            item => ({
+          .map(item => {
 
-              videoId:
-                item.id?.videoId,
+            const videoId =
+              item.id?.videoId;
+
+            if (!videoId) {
+              return null;
+            }
+
+            return {
+
+              id:
+                videoId,
 
               title:
-                item.snippet?.title || '',
+                item.snippet?.title ||
+                'YouTube Video',
 
               channel:
-                item.snippet?.channelTitle || '',
+                item.snippet?.channelTitle ||
+                '',
 
               thumbnail:
                 item.snippet?.thumbnails?.medium?.url ||
                 item.snippet?.thumbnails?.default?.url ||
                 ''
 
-            })
-          )
-          .filter(
-            video =>
-              video.videoId
-          );
+            };
 
+          })
+          .filter(Boolean);
 
       res.json({
         videos
       });
-
 
     } catch (error) {
 
@@ -311,7 +308,6 @@ app.get(
 const storage =
   new Map();
 
-
 const TTL_MINUTES =
   parseInt(
     process.env.FILE_TTL_MINUTES || '10',
@@ -321,7 +317,6 @@ const TTL_MINUTES =
 
 // =====================================================
 // DELETE EXPIRED FILES
-// EVERY 1 MINUTE
 // =====================================================
 
 setInterval(
@@ -329,7 +324,6 @@ setInterval(
 
     const now =
       Date.now();
-
 
     for (
       const [
@@ -394,15 +388,12 @@ app.post(
 
       }
 
-
       const id =
         Math.random()
           .toString(36)
           .slice(2) +
-
         Date.now()
           .toString(36);
-
 
       const safeName =
         (
@@ -410,22 +401,19 @@ app.post(
           req.file.originalname ||
           'file'
         )
-        .replace(
-          /[^\w\-. ]+/g,
-          '_'
-        );
-
+          .replace(
+            /[^\w\-. ]+/g,
+            '_'
+          );
 
       const filename =
         safeName;
-
 
       const expiresAt =
         Date.now() +
         TTL_MINUTES *
         60 *
         1000;
-
 
       storage.set(
         id,
@@ -449,10 +437,8 @@ app.post(
         }
       );
 
-
       const link =
         '/download/' + id;
-
 
       res.json({
 
@@ -476,14 +462,12 @@ app.post(
 
       });
 
-
     } catch (error) {
 
       console.error(
         'Upload error:',
         error
       );
-
 
       res.status(500).json({
         error:
@@ -509,7 +493,6 @@ app.get(
         req.params.id
       );
 
-
     if (!file) {
 
       return res
@@ -520,13 +503,11 @@ app.get(
 
     }
 
-
     res.setHeader(
       'Content-Type',
       file.mime ||
       'application/octet-stream'
     );
-
 
     res.setHeader(
       'Content-Disposition',
@@ -536,7 +517,6 @@ app.get(
         ) +
         '"'
     );
-
 
     res.send(
       file.buffer
@@ -551,6 +531,64 @@ app.get(
 // =====================================================
 
 let totalUsers = 0;
+
+
+// =====================================================
+// YOUTUBE SHARED STATE
+// =====================================================
+
+let youtubeState = {
+
+  videoId:
+    null,
+
+  title:
+    '',
+
+  state:
+    'stopped',
+
+  time:
+    0,
+
+  updatedAt:
+    Date.now()
+
+};
+
+
+// =====================================================
+// GET CURRENT YOUTUBE TIME
+// =====================================================
+
+function getYoutubeCurrentTime() {
+
+  if (
+    youtubeState.state ===
+      'playing' &&
+    youtubeState.updatedAt
+  ) {
+
+    const elapsed =
+      (
+        Date.now() -
+        youtubeState.updatedAt
+      ) / 1000;
+
+    return Math.max(
+      0,
+      youtubeState.time +
+      elapsed
+    );
+
+  }
+
+  return Math.max(
+    0,
+    youtubeState.time || 0
+  );
+
+}
 
 
 // =====================================================
@@ -585,8 +623,34 @@ io.on(
 
     }
 
-
     sendUserStats();
+
+
+    // =================================================
+    // SEND CURRENT YOUTUBE STATE TO NEW USER
+    // =================================================
+
+    socket.emit(
+      'youtubeState',
+      {
+
+        videoId:
+          youtubeState.videoId,
+
+        title:
+          youtubeState.title,
+
+        state:
+          youtubeState.state,
+
+        time:
+          getYoutubeCurrentTime(),
+
+        updatedAt:
+          youtubeState.updatedAt
+
+      }
+    );
 
 
     // =================================================
@@ -599,14 +663,11 @@ io.on(
 
         const name =
           typeof payload?.name === 'string'
-
             ? payload.name.slice(
                 0,
                 20
               )
-
             : null;
-
 
         socket.broadcast.emit(
           'system',
@@ -629,7 +690,7 @@ io.on(
 
 
     // =================================================
-    // CHAT MESSAGE
+    // CHAT
     // =================================================
 
     socket.on(
@@ -638,11 +699,8 @@ io.on(
 
         let text =
           typeof msg?.text === 'string'
-
             ? msg.text
-
             : '';
-
 
         if (
           text.length > 2000
@@ -656,17 +714,13 @@ io.on(
 
         }
 
-
         const name =
           typeof msg?.name === 'string'
-
             ? msg.name.slice(
                 0,
                 20
               )
-
             : null;
-
 
         if (
           !text.trim()
@@ -675,7 +729,6 @@ io.on(
           return;
 
         }
-
 
         io.emit(
           'chat',
@@ -714,7 +767,6 @@ io.on(
 
         }
 
-
         io.emit(
           'fileShared',
           {
@@ -744,12 +796,10 @@ io.on(
             name:
               typeof fileInfo.name ===
               'string'
-
                 ? fileInfo.name.slice(
                     0,
                     20
                   )
-
                 : null,
 
             at:
@@ -779,7 +829,6 @@ io.on(
 
         }
 
-
         io.emit(
           'gifShared',
           {
@@ -798,12 +847,10 @@ io.on(
             name:
               typeof gifInfo.name ===
               'string'
-
                 ? gifInfo.name.slice(
                     0,
                     20
                   )
-
                 : null,
 
             at:
@@ -817,66 +864,126 @@ io.on(
 
 
     // =================================================
-    // YOUTUBE MUSIC - PLAY
+    // YOUTUBE LOAD
     // =================================================
 
     socket.on(
-      'youtubePlay',
+      'youtubeLoad',
       (data) => {
 
         if (
           !data ||
-          !data.videoId
+          typeof data.videoId !==
+            'string'
         ) {
 
           return;
 
         }
 
-
         const videoId =
-          String(
-            data.videoId
-          ).slice(
-            0,
-            50
-          );
+          data.videoId.trim();
 
+        // YouTube video IDs are normally 11 chars
+        if (
+          !/^[a-zA-Z0-9_-]{11}$/.test(
+            videoId
+          )
+        ) {
+
+          return;
+
+        }
+
+        youtubeState = {
+
+          videoId:
+            videoId,
+
+          title:
+            typeof data.title ===
+            'string'
+              ? data.title.slice(
+                  0,
+                  200
+                )
+              : '',
+
+          state:
+            'paused',
+
+          time:
+            0,
+
+          updatedAt:
+            Date.now()
+
+        };
+
+        io.emit(
+          'youtubeLoad',
+          {
+
+            videoId:
+              videoId,
+
+            title:
+              youtubeState.title,
+
+            time:
+              0
+
+          }
+        );
+
+      }
+    );
+
+
+    // =================================================
+    // YOUTUBE PLAY
+    // =====================================================
+
+    socket.on(
+      'youtubePlay',
+      (data) => {
+
+        if (
+          !youtubeState.videoId
+        ) {
+
+          return;
+
+        }
 
         const time =
-          Math.max(
-            0,
-            Number(data.time) || 0
+          Number(
+            data?.time
           );
 
-
-        const name =
-          typeof data.name ===
-          'string'
-
-            ? data.name.slice(
+        youtubeState.time =
+          Number.isFinite(time)
+            ? Math.max(
                 0,
-                20
+                time
               )
+            : getYoutubeCurrentTime();
 
-            : null;
+        youtubeState.state =
+          'playing';
 
+        youtubeState.updatedAt =
+          Date.now();
 
         io.emit(
           'youtubePlay',
           {
 
             videoId:
-              videoId,
+              youtubeState.videoId,
 
             time:
-              time,
-
-            name:
-              name,
-
-            at:
-              Date.now()
+              youtubeState.time
 
           }
         );
@@ -886,29 +993,49 @@ io.on(
 
 
     // =================================================
-    // YOUTUBE MUSIC - PAUSE
+    // YOUTUBE PAUSE
     // =================================================
 
     socket.on(
       'youtubePause',
       (data) => {
 
+        if (
+          !youtubeState.videoId
+        ) {
+
+          return;
+
+        }
+
         const time =
-          Math.max(
-            0,
-            Number(data?.time) || 0
+          Number(
+            data?.time
           );
 
+        youtubeState.time =
+          Number.isFinite(time)
+            ? Math.max(
+                0,
+                time
+              )
+            : getYoutubeCurrentTime();
+
+        youtubeState.state =
+          'paused';
+
+        youtubeState.updatedAt =
+          Date.now();
 
         io.emit(
           'youtubePause',
           {
 
-            time:
-              time,
+            videoId:
+              youtubeState.videoId,
 
-            at:
-              Date.now()
+            time:
+              youtubeState.time
 
           }
         );
@@ -918,29 +1045,52 @@ io.on(
 
 
     // =================================================
-    // YOUTUBE MUSIC - SEEK
+    // YOUTUBE SEEK
     // =================================================
 
     socket.on(
       'youtubeSeek',
       (data) => {
 
+        if (
+          !youtubeState.videoId
+        ) {
+
+          return;
+
+        }
+
         const time =
-          Math.max(
-            0,
-            Number(data?.time) || 0
+          Number(
+            data?.time
           );
 
+        if (
+          !Number.isFinite(time)
+        ) {
+
+          return;
+
+        }
+
+        youtubeState.time =
+          Math.max(
+            0,
+            time
+          );
+
+        youtubeState.updatedAt =
+          Date.now();
 
         io.emit(
           'youtubeSeek',
           {
 
-            time:
-              time,
+            videoId:
+              youtubeState.videoId,
 
-            at:
-              Date.now()
+            time:
+              youtubeState.time
 
           }
         );
@@ -950,7 +1100,42 @@ io.on(
 
 
     // =================================================
-    // USER DISCONNECTED
+    // YOUTUBE STOP
+    // =================================================
+
+    socket.on(
+      'youtubeStop',
+      () => {
+
+        youtubeState = {
+
+          videoId:
+            null,
+
+          title:
+            '',
+
+          state:
+            'stopped',
+
+          time:
+            0,
+
+          updatedAt:
+            Date.now()
+
+        };
+
+        io.emit(
+          'youtubeStop'
+        );
+
+      }
+    );
+
+
+    // =================================================
+    // DISCONNECT
     // =================================================
 
     socket.on(
@@ -969,7 +1154,6 @@ io.on(
 
           }
         );
-
 
         sendUserStats();
 
@@ -993,13 +1177,11 @@ server.listen(
       PORT
     );
 
-
     console.log(
       'File expiry: ' +
       TTL_MINUTES +
       ' minutes'
     );
-
 
     console.log(
       'GIPHY API: ' +
@@ -1009,7 +1191,6 @@ server.listen(
           : 'NOT CONFIGURED'
       )
     );
-
 
     console.log(
       'YouTube API: ' +
