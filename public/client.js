@@ -39,17 +39,30 @@ const liveUsersEl =
 const totalUsersEl =
   document.getElementById('totalUsers');
 
+
+// =====================================================
+// GIF ELEMENTS
+// =====================================================
+
 const gifBtn =
   document.getElementById('gifBtn');
 
-const gifPanel =
-  document.getElementById('gifPanel');
+const gifPicker =
+  document.getElementById('gifPicker');
 
 const gifSearch =
   document.getElementById('gifSearch');
 
+const gifSearchBtn =
+  document.getElementById('gifSearchBtn');
+
 const gifResults =
   document.getElementById('gifResults');
+
+
+// =====================================================
+// VOICE
+// =====================================================
 
 const voiceBtn =
   document.getElementById('voiceBtn');
@@ -80,15 +93,14 @@ socket.on(
     if (liveUsersEl) {
 
       liveUsersEl.textContent =
-        stats.live;
+        stats.live ?? 0;
 
     }
-
 
     if (totalUsersEl) {
 
       totalUsersEl.textContent =
-        stats.total;
+        stats.total ?? 0;
 
     }
 
@@ -104,7 +116,7 @@ socket.emit(
   'hello',
   {
     name:
-      nameInput.value ||
+      nameInput.value.trim() ||
       null
   }
 );
@@ -131,7 +143,6 @@ function playNotificationSound() {
 
     }
 
-
     if (
       audioContext.state ===
       'suspended'
@@ -140,7 +151,6 @@ function playNotificationSound() {
       audioContext.resume();
 
     }
-
 
     const oscillator =
       audioContext.createOscillator();
@@ -151,6 +161,7 @@ function playNotificationSound() {
 
     oscillator.type =
       'sine';
+
 
     oscillator.frequency.setValueAtTime(
       880,
@@ -206,7 +217,9 @@ function playNotificationSound() {
 }
 
 
-// Unlock audio after user interaction
+// =====================================================
+// UNLOCK AUDIO
+// =====================================================
 
 document.addEventListener(
   'click',
@@ -256,7 +269,6 @@ async function requestNotifications() {
 
   }
 
-
   if (
     Notification.permission ===
     'default'
@@ -289,7 +301,6 @@ function showNotification(
 
   }
 
-
   if (
     Notification.permission !==
     'granted'
@@ -299,7 +310,6 @@ function showNotification(
 
   }
 
-
   if (
     document.visibilityState ===
     'visible'
@@ -308,7 +318,6 @@ function showNotification(
     return;
 
   }
-
 
   try {
 
@@ -326,7 +335,7 @@ function showNotification(
 
 
 // =====================================================
-// CHAT MESSAGE
+// CHAT MESSAGE RECEIVE
 // =====================================================
 
 socket.on(
@@ -411,6 +420,7 @@ socket.on(
 
     playNotificationSound();
 
+
     showNotification(
       '📎 New file',
       `${
@@ -441,6 +451,7 @@ socket.on(
 
     playNotificationSound();
 
+
     showNotification(
       '😂 New GIF',
       `${
@@ -457,9 +468,15 @@ socket.on(
 // SEND MESSAGE
 // =====================================================
 
-document
-  .getElementById('controls')
-  .addEventListener(
+const controls =
+  document.getElementById(
+    'controls'
+  );
+
+
+if (controls) {
+
+  controls.addEventListener(
     'submit',
     (e) => {
 
@@ -485,7 +502,9 @@ document
         null;
 
 
-      // Text
+      // ---------------------------------------------
+      // TEXT
+      // ---------------------------------------------
 
       if (text) {
 
@@ -498,7 +517,9 @@ document
         );
 
 
-        msgInput.value = '';
+        msgInput.value =
+          '';
+
 
         msgInput.style.height =
           'auto';
@@ -506,7 +527,9 @@ document
       }
 
 
-      // Files
+      // ---------------------------------------------
+      // FILES
+      // ---------------------------------------------
 
       if (
         fileInput.files.length >
@@ -528,6 +551,7 @@ document
         fileInput.value =
           '';
 
+
         fileQueue.innerHTML =
           '';
 
@@ -535,6 +559,8 @@ document
 
     }
   );
+
+}
 
 
 // =====================================================
@@ -547,6 +573,7 @@ msgInput.addEventListener(
 
     msgInput.style.height =
       'auto';
+
 
     msgInput.style.height =
       Math.min(
@@ -626,6 +653,7 @@ fileInput.addEventListener(
       x.textContent =
         '✕';
 
+
       x.className =
         'x';
 
@@ -662,7 +690,10 @@ fileInput.addEventListener(
         };
 
 
-      chip.appendChild(x);
+      chip.appendChild(
+        x
+      );
+
 
       fileQueue.appendChild(
         chip
@@ -759,11 +790,13 @@ async function uploadFiles(
         fileInfo
       );
 
+
     } catch (error) {
 
       console.error(
         error
       );
+
 
       addSystem(
         `Upload failed for ${file.name} ❌`
@@ -777,7 +810,7 @@ async function uploadFiles(
 
 
 // =====================================================
-// IMAGE PREVIEW
+// IMAGE CHECK
 // =====================================================
 
 function isImage(
@@ -813,6 +846,11 @@ const EMOJIS = [
 
 
 function buildEmojiPicker() {
+
+  if (!emojiPicker) {
+    return;
+  }
+
 
   emojiPicker.innerHTML =
     '';
@@ -885,41 +923,23 @@ function buildEmojiPicker() {
 buildEmojiPicker();
 
 
-emojiBtn.addEventListener(
-  'click',
-  () => {
+if (emojiBtn) {
 
-    emojiPicker.classList.toggle(
-      'open'
-    );
-
-  }
-);
-
-
-// =====================================================
-// GIF
-// =====================================================
-
-if (gifBtn) {
-
-  gifBtn.addEventListener(
+  emojiBtn.addEventListener(
     'click',
     () => {
 
-      gifPanel.classList.toggle(
+      emojiPicker.classList.toggle(
         'open'
       );
 
 
       if (
-        gifPanel.classList.contains(
-          'open'
-        )
+        gifPicker
       ) {
 
-        searchGifs(
-          'funny'
+        gifPicker.classList.remove(
+          'open'
         );
 
       }
@@ -930,11 +950,99 @@ if (gifBtn) {
 }
 
 
+// =====================================================
+// GIF BUTTON
+// =====================================================
+
+if (
+  gifBtn &&
+  gifPicker
+) {
+
+  gifBtn.addEventListener(
+    'click',
+    () => {
+
+      gifPicker.classList.toggle(
+        'open'
+      );
+
+
+      if (
+        gifPicker.classList.contains(
+          'open'
+        )
+      ) {
+
+        if (emojiPicker) {
+
+          emojiPicker.classList.remove(
+            'open'
+          );
+
+        }
+
+
+        if (gifSearch) {
+
+          gifSearch.focus();
+
+        }
+
+
+        if (
+          gifResults &&
+          gifResults.children.length === 0
+        ) {
+
+          searchGifs(
+            'funny'
+          );
+
+        }
+
+      }
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// GIF SEARCH BUTTON
+// =====================================================
+
+if (gifSearchBtn) {
+
+  gifSearchBtn.addEventListener(
+    'click',
+    () => {
+
+      const query =
+        gifSearch.value.trim();
+
+
+      searchGifs(
+        query ||
+        'funny'
+      );
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// GIF SEARCH ENTER
+// =====================================================
+
 if (gifSearch) {
 
   gifSearch.addEventListener(
     'keydown',
-    e => {
+    (e) => {
 
       if (
         e.key === 'Enter'
@@ -942,8 +1050,13 @@ if (gifSearch) {
 
         e.preventDefault();
 
+
+        const query =
+          gifSearch.value.trim();
+
+
         searchGifs(
-          gifSearch.value.trim() ||
+          query ||
           'funny'
         );
 
@@ -955,40 +1068,69 @@ if (gifSearch) {
 }
 
 
+// =====================================================
+// SEARCH GIFS
+// =====================================================
+
 async function searchGifs(
   query = 'funny'
 ) {
 
   if (!gifResults) {
+
     return;
+
   }
 
 
+  const cleanQuery =
+    String(
+      query || 'funny'
+    )
+    .trim()
+    .slice(
+      0,
+      100
+    );
+
+
   gifResults.innerHTML =
-    '<div class="gif-loading">Loading GIFs... 🎬</div>';
+    '<div class="gif-loading">Searching GIFs... 🎬</div>';
 
 
   try {
 
-    const response =
+    const res =
       await fetch(
-        `/api/gifs?q=${encodeURIComponent(
-          query
-        )}&limit=24`
+        `/api/gifs/search?q=${encodeURIComponent(
+          cleanQuery || 'funny'
+        )}`
       );
 
 
-    if (!response.ok) {
+    let data = null;
 
-      throw new Error(
-        'GIF request failed'
-      );
+
+    try {
+
+      data =
+        await res.json();
+
+    } catch {
+
+      data = {};
 
     }
 
 
-    const data =
-      await response.json();
+    if (!res.ok) {
+
+      throw new Error(
+        data.error ||
+        'GIF search failed'
+      );
+
+    }
 
 
     gifResults.innerHTML =
@@ -1001,7 +1143,8 @@ async function searchGifs(
     ) {
 
       gifResults.innerHTML =
-        '<div class="gif-loading">No GIFs found 😅</div>';
+        '<div class="gif-loading">No GIFs found 😢</div>';
+
 
       return;
 
@@ -1027,12 +1170,12 @@ async function searchGifs(
           'GIF';
 
 
+        img.className =
+          'gif-item';
+
+
         img.loading =
           'lazy';
-
-
-        img.className =
-          'gif-result';
 
 
         img.addEventListener(
@@ -1044,7 +1187,7 @@ async function searchGifs(
             );
 
 
-            gifPanel.classList
+            gifPicker.classList
               .remove(
                 'open'
               );
@@ -1060,6 +1203,7 @@ async function searchGifs(
       }
     );
 
+
   } catch (error) {
 
     console.error(
@@ -1069,12 +1213,18 @@ async function searchGifs(
 
 
     gifResults.innerHTML =
-      '<div class="gif-loading">Unable to load GIFs ❌</div>';
+      `<div class="gif-loading">
+        GIFs could not be loaded ❌
+      </div>`;
 
   }
 
 }
 
+
+// =====================================================
+// SEND GIF
+// =====================================================
 
 function sendGif(
   gif
@@ -1201,6 +1351,7 @@ function addMessage(
     nameEl
   );
 
+
   head.appendChild(
     timeEl
   );
@@ -1209,6 +1360,7 @@ function addMessage(
   el.appendChild(
     head
   );
+
 
   el.appendChild(
     body
@@ -1291,6 +1443,7 @@ function addFileMessage(
     who
   );
 
+
   head.appendChild(
     timeEl
   );
@@ -1306,7 +1459,9 @@ function addFileMessage(
     'body';
 
 
+  // ---------------------------------------------
   // IMAGE
+  // ---------------------------------------------
 
   if (
     isImage(f.mime)
@@ -1349,12 +1504,26 @@ function addFileMessage(
       'file-info';
 
 
-    info.innerHTML =
-      `<strong>${safe(
-        f.filename
-      )}</strong> · ${fmtSize(
-        f.size
-      )} · `;
+    const strong =
+      document.createElement(
+        'strong'
+      );
+
+
+    strong.textContent =
+      f.filename;
+
+
+    info.appendChild(
+      strong
+    );
+
+
+    info.appendChild(
+      document.createTextNode(
+        ` · ${fmtSize(f.size)} · `
+      )
+    );
 
 
     const download =
@@ -1366,8 +1535,10 @@ function addFileMessage(
     download.href =
       f.link;
 
+
     download.download =
       f.filename;
+
 
     download.textContent =
       'Download';
@@ -1384,7 +1555,10 @@ function addFileMessage(
 
   }
 
+
+  // ---------------------------------------------
   // AUDIO
+  // ---------------------------------------------
 
   else if (
     f.mime &&
@@ -1430,10 +1604,11 @@ function addFileMessage(
       'file-info';
 
 
-    info.innerHTML =
-      `🎤 ${safe(
-        f.filename
-      )} · `;
+    info.appendChild(
+      document.createTextNode(
+        `🎤 ${f.filename} · `
+      )
+    );
 
 
     const download =
@@ -1445,8 +1620,10 @@ function addFileMessage(
     download.href =
       f.link;
 
+
     download.download =
       f.filename;
+
 
     download.textContent =
       'Download';
@@ -1463,16 +1640,40 @@ function addFileMessage(
 
   }
 
+
+  // ---------------------------------------------
   // OTHER FILE
+  // ---------------------------------------------
 
   else {
 
-    body.innerHTML =
-      `📎 <strong>${safe(
-        f.filename
-      )}</strong> — ${fmtSize(
-        f.size
-      )} · `;
+    body.appendChild(
+      document.createTextNode(
+        '📎 '
+      )
+    );
+
+
+    const strong =
+      document.createElement(
+        'strong'
+      );
+
+
+    strong.textContent =
+      f.filename;
+
+
+    body.appendChild(
+      strong
+    );
+
+
+    body.appendChild(
+      document.createTextNode(
+        ` — ${fmtSize(f.size)} · `
+      )
+    );
 
 
     const download =
@@ -1484,8 +1685,10 @@ function addFileMessage(
     download.href =
       f.link;
 
+
     download.download =
       f.filename;
+
 
     download.textContent =
       'Download';
@@ -1522,6 +1725,7 @@ function addFileMessage(
   el.appendChild(
     head
   );
+
 
   el.appendChild(
     body
@@ -1577,10 +1781,9 @@ function addGifMessage(
     'name';
 
 
-  who.innerHTML =
-    gif.name
-      ? safe(gif.name)
-      : 'Anon';
+  who.textContent =
+    gif.name ||
+    'Anon';
 
 
   const time =
@@ -1603,6 +1806,7 @@ function addGifMessage(
   head.appendChild(
     who
   );
+
 
   head.appendChild(
     time
@@ -1642,6 +1846,24 @@ function addGifMessage(
     'lazy';
 
 
+  image.addEventListener(
+    'error',
+    () => {
+
+      if (
+        gif.preview &&
+        image.src !== gif.preview
+      ) {
+
+        image.src =
+          gif.preview;
+
+      }
+
+    }
+  );
+
+
   body.appendChild(
     image
   );
@@ -1669,6 +1891,7 @@ function addGifMessage(
   el.appendChild(
     head
   );
+
 
   el.appendChild(
     body
@@ -1753,9 +1976,27 @@ if (voiceBtn) {
 }
 
 
+// =====================================================
+// START RECORDING
+// =====================================================
+
 async function startRecording() {
 
   try {
+
+    if (
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+
+      addSystem(
+        'Voice recording is not supported ❌'
+      );
+
+      return;
+
+    }
+
 
     const stream =
       await navigator.mediaDevices
@@ -1768,10 +2009,44 @@ async function startRecording() {
       [];
 
 
+    let mimeType =
+      '';
+
+
+    if (
+      MediaRecorder.isTypeSupported(
+        'audio/webm;codecs=opus'
+      )
+    ) {
+
+      mimeType =
+        'audio/webm;codecs=opus';
+
+    }
+
+    else if (
+      MediaRecorder.isTypeSupported(
+        'audio/webm'
+      )
+    ) {
+
+      mimeType =
+        'audio/webm';
+
+    }
+
+
     mediaRecorder =
-      new MediaRecorder(
-        stream
-      );
+      mimeType
+        ? new MediaRecorder(
+            stream,
+            {
+              mimeType
+            }
+          )
+        : new MediaRecorder(
+            stream
+          );
 
 
     mediaRecorder.addEventListener(
@@ -1779,6 +2054,7 @@ async function startRecording() {
       e => {
 
         if (
+          e.data &&
           e.data.size > 0
         ) {
 
@@ -1825,6 +2101,7 @@ async function startRecording() {
 
     mediaRecorder.start();
 
+
     recording =
       true;
 
@@ -1842,11 +2119,17 @@ async function startRecording() {
       '🎤 Recording... click 🎤 again to send'
     );
 
+
   } catch (error) {
 
     console.error(
+      'Microphone error:',
       error
     );
+
+
+    recording =
+      false;
 
 
     addSystem(
@@ -1857,6 +2140,10 @@ async function startRecording() {
 
 }
 
+
+// =====================================================
+// STOP RECORDING
+// =====================================================
 
 function stopRecording() {
 
@@ -1885,6 +2172,10 @@ function stopRecording() {
 
 }
 
+
+// =====================================================
+// UPLOAD VOICE
+// =====================================================
 
 async function uploadVoice(
   blob
@@ -1968,9 +2259,11 @@ async function uploadVoice(
       }
     );
 
+
   } catch (error) {
 
     console.error(
+      'Voice upload error:',
       error
     );
 
@@ -1982,6 +2275,45 @@ async function uploadVoice(
   }
 
 }
+
+
+// =====================================================
+// CLOSE PICKERS WHEN CLICKING OUTSIDE
+// =====================================================
+
+document.addEventListener(
+  'click',
+  (e) => {
+
+    if (
+      emojiPicker &&
+      emojiBtn &&
+      !emojiPicker.contains(e.target) &&
+      !emojiBtn.contains(e.target)
+    ) {
+
+      emojiPicker.classList.remove(
+        'open'
+      );
+
+    }
+
+
+    if (
+      gifPicker &&
+      gifBtn &&
+      !gifPicker.contains(e.target) &&
+      !gifBtn.contains(e.target)
+    ) {
+
+      gifPicker.classList.remove(
+        'open'
+      );
+
+    }
+
+  }
+);
 
 
 // =====================================================
@@ -2006,6 +2338,7 @@ function safe(
   .replace(
     /[&<>"]/g,
     c => ({
+
       '&':
         '&amp;',
 
@@ -2052,6 +2385,7 @@ function fmtSize(
   let i =
     0;
 
+
   let v =
     Number(n) || 0;
 
@@ -2063,6 +2397,7 @@ function fmtSize(
 
     v /=
       1024;
+
 
     i++;
 
@@ -2080,3 +2415,12 @@ function fmtSize(
   );
 
 }
+
+
+// =====================================================
+// CLIENT READY
+// =====================================================
+
+console.log(
+  'Anon Fun Chat client loaded successfully.'
+);
