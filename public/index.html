@@ -1,7 +1,9 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -12,6 +14,11 @@
   <meta
     name="theme-color"
     content="#f8fafc"
+  >
+
+  <meta
+    name="description"
+    content="Anon Fun Chat - Anonymous group chat with GIFs, emojis, voice messages and file sharing."
   >
 
   <title>Anon Fun Chat</title>
@@ -25,9 +32,12 @@
     rel="icon"
     href="data:;base64,iVBORw0KGgo="
   >
+
 </head>
 
+
 <body>
+
 
   <!-- ==========================================
        BACKGROUND
@@ -37,12 +47,14 @@
     class="background-shapes"
     aria-hidden="true"
   >
+
     <span class="circle circle-1"></span>
     <span class="circle circle-2"></span>
     <span class="circle circle-3"></span>
     <span class="circle circle-4"></span>
     <span class="circle circle-5"></span>
     <span class="circle circle-6"></span>
+
   </div>
 
 
@@ -53,7 +65,9 @@
   <div class="app">
 
 
-    <!-- HEADER -->
+    <!-- ========================================
+         HEADER
+    ========================================= -->
 
     <header>
 
@@ -61,12 +75,20 @@
         💬 Anon Fun Chat
       </div>
 
+
       <div class="header-right">
 
+
         <div class="meta">
+
           <span class="live-dot"></span>
-          <span>Live — Nothing is saved</span>
+
+          <span>
+            Live — Nothing is saved
+          </span>
+
         </div>
+
 
         <div
           class="user-stats"
@@ -74,25 +96,41 @@
         >
 
           <span>
+
             🟢
-            <strong id="liveUsers">0</strong>
+
+            <strong id="liveUsers">
+              0
+            </strong>
+
             Live
+
           </span>
 
+
           <span>
+
             👥
-            <strong id="totalUsers">0</strong>
+
+            <strong id="totalUsers">
+              0
+            </strong>
+
             Total
+
           </span>
 
         </div>
+
 
       </div>
 
     </header>
 
 
-    <!-- CHAT -->
+    <!-- ========================================
+         CHAT AREA
+    ========================================= -->
 
     <main
       id="chatArea"
@@ -101,16 +139,22 @@
     ></main>
 
 
-    <!-- CONTROLS -->
+    <!-- ========================================
+         CONTROLS
+    ========================================= -->
 
     <form
       id="controls"
       autocomplete="off"
     >
 
-      <!-- NAME -->
+
+      <!-- ======================================
+           NAME ROW
+      ======================================= -->
 
       <div class="row name-row">
+
 
         <input
           id="name"
@@ -121,7 +165,9 @@
         >
 
 
-        <!-- EMOJI PICKER -->
+        <!-- ====================================
+             EMOJI PICKER
+        ===================================== -->
 
         <div
           class="emoji-picker"
@@ -130,37 +176,60 @@
         ></div>
 
 
-        <!-- GIF PICKER -->
+        <!-- ====================================
+             GIF PICKER
+        ===================================== -->
 
         <div
-          class="gif-picker"
           id="gifPicker"
+          class="gif-picker"
         >
 
+
           <div class="gif-search">
+
 
             <input
               id="gifSearch"
               type="text"
               placeholder="Search GIFs..."
               autocomplete="off"
+              maxlength="100"
+              aria-label="Search GIFs"
             >
 
+
+            <button
+              type="button"
+              id="gifSearchBtn"
+              title="Search GIFs"
+            >
+              Search
+            </button>
+
+
           </div>
+
 
           <div
             id="gifResults"
             class="gif-results"
+            aria-live="polite"
           ></div>
 
+
         </div>
+
 
       </div>
 
 
-      <!-- MESSAGE -->
+      <!-- ======================================
+           MESSAGE ROW
+      ======================================= -->
 
       <div class="row message-row">
+
 
         <textarea
           id="msg"
@@ -171,7 +240,9 @@
         ></textarea>
 
 
-        <!-- EMOJI -->
+        <!-- ====================================
+             EMOJI BUTTON
+        ===================================== -->
 
         <button
           type="button"
@@ -183,11 +254,14 @@
         </button>
 
 
-        <!-- GIF -->
+        <!-- ====================================
+             GIF BUTTON
+        ===================================== -->
 
         <button
           type="button"
           id="gifBtn"
+          class="gif-btn"
           title="GIF"
           aria-label="GIF"
         >
@@ -195,7 +269,9 @@
         </button>
 
 
-        <!-- VOICE -->
+        <!-- ====================================
+             VOICE BUTTON
+        ===================================== -->
 
         <button
           type="button"
@@ -207,7 +283,9 @@
         </button>
 
 
-        <!-- FILE -->
+        <!-- ====================================
+             FILE BUTTON
+        ===================================== -->
 
         <label
           class="fileLabel"
@@ -227,7 +305,9 @@
         </label>
 
 
-        <!-- SEND -->
+        <!-- ====================================
+             SEND BUTTON
+        ===================================== -->
 
         <button
           id="sendBtn"
@@ -237,10 +317,13 @@
           Send
         </button>
 
+
       </div>
 
 
-      <!-- FILE QUEUE -->
+      <!-- ======================================
+           FILE QUEUE
+      ======================================= -->
 
       <div
         id="fileQueue"
@@ -248,31 +331,48 @@
         aria-live="polite"
       ></div>
 
+
     </form>
 
 
-    <!-- FOOTER -->
+    <!-- ========================================
+         FOOTER
+    ========================================= -->
 
     <footer>
 
       <small>
+
         For fun only · No accounts · No history ·
         Files auto-expire · Be nice ✨
+
       </small>
 
     </footer>
 
+
   </div>
 
 
-  <!-- SOCKET.IO -->
+  <!-- ==========================================
+       SOCKET.IO
+  =========================================== -->
 
-  <script src="/socket.io/socket.io.js"></script>
+  <script
+    src="/socket.io/socket.io.js"
+  ></script>
 
-  <!-- CLIENT -->
 
-  <script src="client.js"></script>
+  <!-- ==========================================
+       CLIENT JAVASCRIPT
+  =========================================== -->
+
+  <script
+    src="client.js"
+  ></script>
+
 
 </body>
 
 </html>
+```
